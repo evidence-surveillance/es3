@@ -374,7 +374,8 @@ def regenerate_tsne():
     new_tsne = numpy.load('models/tsne/tsne_matrix_' + date + '.npy')
     # generate new _tsne background plot
     _new_tsne_img(new_tsne, date)
-    upload_models()
+    # uncomment this if uploading to a remote server
+    # upload_models()
 
 
 def _tsne(input_matrix, date):
