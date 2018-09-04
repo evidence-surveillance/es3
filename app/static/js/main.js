@@ -240,7 +240,7 @@ $(document).ready(function () {
             if (url === "https://13.210.35.191/" || url === "https://surveillance-chi.mq.edu.au/") {
                 $(document).ready(function () {
                     console.log('triggering new plot');
-                    socket.emit('get_plot',{});
+                    socket.emit('get_plot', {});
                     var plot_interval = window.setInterval(function () {
                         socket.emit('get_plot', {});
                     }, 10000);
@@ -611,12 +611,18 @@ $(document).ready(function () {
                     });
 
                     $('.rel_incl').css('visibility', 'hidden');
+                    $(".btn-incl-cmp").val('False');
+                    $(".btn-incl-cmp").html('This list is incomplete');
                 }
                 else {
                     console.log('complete is not true');
 
                     $('.rel_incl').css('visibility', 'visible');
+                    $(".btn-incl-cmp").val('True');
+                    $(".btn-incl-cmp").html('This list is complete');
                 }
+                $(".btn-incl-cmp").fadeIn(1000);
+
             });
         });
 
