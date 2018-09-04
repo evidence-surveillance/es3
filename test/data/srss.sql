@@ -301,4 +301,4 @@ create trigger vote_counts
 	for each row
 	execute procedure update_votes()
 ;
-
+INSERT INTO users(user_name, salt, salted_password, user_type, nickname,id)  VALUES ('admin@admin.com', 'b27315059583471db9739708a479f8cb','f1a6f062d3a695abe9beb5de652ffa3d5744c01301c9eedfcb167934f18aa66a','admin','admin',20);
