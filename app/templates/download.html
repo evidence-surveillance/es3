@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+    <div class="container pg_content">
+
+        <div class="row">
+            <h1 class="display-3 text-left">download data</h1>
+            <hr>
+            <p>
+                If you are interested in the data collected by our system, you may download our entire set of systematic
+                reviews
+                and their respective verified*, included and relevant trials, along with the net number of votes for
+                each
+                trial-review link, <a href="/download/all">here</a>.
+            </p>
+            <p>
+                You may also download the subset of reviews that have complete a list of verified trials <a
+                    href="/download/complete">here</a>. Note that
+                this file only contains the verified trials for each review, and will not include any relevant or
+                included trials.
+            </p>
+            <p>
+
+                Both files are in the following format, with one row per review-trial link:<br>
+
+                review PMID, NCT ID, net votes, relationship
+            </p>
+
+            <p> You might find it useful to use the APIs provided by <a
+                    href="https://clinicaltrials.gov/ct2/resources/download">ClinicalTrials.gov</a>
+                and <a href="https://www.ncbi.nlm.nih.gov/books/NBK25500/">PubMed</a> in conjunction with the PubMed IDs
+                and
+                NCT
+                IDs in our data to resolve review and trial metadata.
+            </p>
+            <p>
+                If there's any other data within our system that you think could be useful to you, please don't hesitate
+                to
+                <a href="/contact">get in touch</a> and we can try to accomodate you.
+            </p>
+            <hr>
+            <p style="font-style: italic; font-size: 80%;">
+                *verified trials are trials that have been verified by a human user to be included in the relevant
+                systematic
+                review
+
+
+            </p>
+        </div>
+    </div>
+    {{ super() }}
+
+{% endblock %}

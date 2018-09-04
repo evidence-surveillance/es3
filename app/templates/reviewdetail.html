@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="container-fluid pg_content" style="padding-bottom: 200px;">
+        <div class="modal fade" id="myModal" role="dialog">
+            <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Oops...</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Some text in the modal.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="col-lg-2 visible-lg" id="related-reviews" style="display: none;"></div>
+        <div class="col-lg-10 col-md-12">
+            <div class="row">
+                <div class="col-lg-12 col-md-12" id="review-data-container" style="display: none;">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12 col-md-12">
+                    <div class="row " id="review-trials-container">
+                        <div id="included" class="col-md-6">
+
+                            <div class="progress_cochranebot progress-div" style="display:none;">
+                                <h6>cochranebot</h6>
+                                <h4 id="progress_txt_cochranebot">Running cochranebot</h4>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress_crossrefbot progress-div" style="display:none;">
+                                <h6>crossrefbot</h6>
+                                <h4 id="progress_txt_crossrefbot">Running crossrefbot</h4>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="incl_trials_container" style="display: none;"></div>
+
+                        </div>
+
+                        <div id="relevant" class="col-md-6">
+
+                            <div class="progress_basicbot progress-div" style="display:none;">
+                                <h6>basicbot1</h6>
+                                <h4 id="progress_txt_basicbot">running basicbot</h4>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress_basicbot2 progress-div" style="display:none;">
+                                <h6>basicbot2</h6>
+                                <h4 id="progress_txt_basicbot2">running basicbot2</h4>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="rel_trials_container" style="display: none;"></div>
+
+
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ super() }}
+{% endblock %}

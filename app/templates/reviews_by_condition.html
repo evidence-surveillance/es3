@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+    <div class="container pg_content">
+    <h1 class ="display-3 text-left">{{ reviews[0].condition}}</h1>
+    <hr>
+
+        <div class="row">
+
+        <ul class="list-group">
+
+            {% for review in reviews %}
+                <li class="list-group-item">
+                <a href="/search?searchterm={{ review.review_id }}">{{ review.title }}</a>
+                    <br><small><em>{{ review.year }}</em></small>
+            </li>
+
+            {% endfor %}
+
+
+        </ul>
+
+
+
+
+        </div>
+    </div>
+    {{ super() }}
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+    <div class="container pg_content">
+    <h1 class ="display-3 text-left">{{ category_name[0]['category'] }}</h1>
+    <hr>
+
+        <div class="row">
+
+
+
+          <ul class="list-group">
+
+              {% for condition in conditions %}
+            <li class="list-group-item">
+                <span class="badge" id = "condition_{{ condition.id }}">...</span>
+                  <a href="/condition/{{ condition.id }}">{{ condition.condition }}</a>
+            </li>
+                {% endfor %}
+
+        </ul>
+
+        </div>
+    </div>
+{{ super() }}
+
+{% endblock %}

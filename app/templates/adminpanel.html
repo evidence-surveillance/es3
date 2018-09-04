@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="jumbotron ">
+                    <h3>Create user</h3>
+                    {{ wtf.quick_form(new_user)}}<br>
+
+                    <h3>Delete user(s)</h3>
+                    <form method="post" action="{{ url_for('admin_panel') }}">
+                        <table class = "table">
+                            <tr>
+                                <th>Login ID</th>
+
+                                <th>Permissions</th>
+                                <th>Delete?</th>
+                            </tr>
+                            {% for user in users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.permissions }} </td>
+                                    <td><input type="checkbox" id="{{ user.id }}" name="{{ user.id }}"></td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                        <input class="btn btn-default" type="submit" value="Delete Selected"
+                               onclick="if (!confirm('Are you sure you want to delete this user?')) return false;"
+                               name='submit'>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ super() }}
+{% endblock %}

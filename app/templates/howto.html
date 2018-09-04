@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+    <div class="container pg_content" style="padding-bottom: 10%;">
+
+        <div class="row">
+
+            <h1 class="display-3 text-left">how to use</h1>
+            <hr>
+            <p>
+                The system is designed as a shared space for humans and machines to work together. If you are a human,
+                the best way to start with the system is to select one of the examples of systematic reviews on the
+                <a href="/">home page</a>. These are examples that are already in the system and for which we are
+                relatively confident that
+                we have identified all of the registered trials that were included in the systematic review. If you are
+                a machine, then you probably already know why you are here.
+            </p>
+            <p>
+                If you haven’t already registered as a user, then <a href="mailto:paige.newman@mq.edu.au">email us</a>, answer a few questions, and we may provide
+                you with access to the full functionality of the website and access to the underlying data. Remember
+                that if you register with the system and start to add or confirm trials that are included in systematic
+                reviews or are relevant to their updates, then you are helping us to train our software agents to be
+                smarter and better at predicting which new trials may be relevant to already-published systematic
+                reviews.
+            </p>
+            <p>
+                <strong>For registered systematic reviewers…</strong>
+            </p>
+            <p>If you want to monitor the accumulation of evidence for a systematic review you have published,
+                then you can simply copy and paste the PubMed identifier for your systematic review into the search box
+                at the top of this page. If it is not already in our database, then the system will add it to the
+                database and then look for the set of trials that were included in the review and have registrations in
+                ClinicalTrials.gov.</p>
+
+            <p>Check through the list of included studies (on the left) to see if the system has missed any (or
+                incorrectly added published trials that were not included), and confirm that they are all present. As
+                you add trials, other software agents will start to vote up or down on other trials with registrations
+                in ClinicalTrials.gov to recommend trials that might be included in an update.
+            </p>
+            <p>
+                Once you are satisfied that all of the trials included in the published systematic review are present,
+                you can look through the details of the similar trials (on the right) and vote up or down on those that
+                are likely or unlikely to be relevant. If there are trials that you can’t immediately see in the list
+                but you know are likely to be relevant, you can add them manually.
+            </p>
+            <p>After voting on relevant trials recommended by the system, you can ask the system to add up the number of
+                participants across included and relevant trials to check how much of the currently (or soon-to-be)
+                available evidence the published systematic review covers.</p>
+            <p>
+                <strong>For registered researchers...</strong>
+            </p>
+            <p>We also provide up-to-date access to all available links between published systematic reviews and
+                included trial registrations, and scores on trials that may be relevant to an update—all as a single
+                large sparse matrix. While the matrix is incomplete and imperfect right now, we hope it will function as
+                a shared resource for researchers in the area to help us all improve machine learning tools used in
+                trial screening as well as tools used to support the prioritisation of systematic review updates where
+                there is a risk of a change in conclusion.</p>
+            <p>
+                <strong>For clinicians and consumers…</strong>
+            </p>
+            <p>The trial2rev system is also designed to help you quickly estimate if a published review might be
+                outdated. We have included an early version of a tool that estimates the risk that a systematic review
+                would change its conclusions if it was updated based on evidence from trials that have recently been
+                completed.</p>
+            <p>Please note that the trial2rev system is provided as-is and we make no guarantees about the accuracy of
+                the data or any of the predictions. It is not intended to replace expert guidance on the current value
+                or credibility of any systematic review. </p>
+            <p>If you are interested in how the interface works, want to examine one or more of the software agents we
+                use to fetch new data, or want to improve on the machine learning methods we use to train our other
+                intelligent agents, check the information page or visit our <a href = "https://github.com/evidence-surveillance/trial2rev">GitHub project page</a>.</p>
+
+        </div>
+    </div>
+
+    {{ super() }}
+
+{% endblock %}

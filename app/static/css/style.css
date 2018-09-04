@@ -1,0 +1,157 @@
+.pre-scrollable {
+    max-height: 500px !important;
+}
+
+/*body { padding-bottom: 150px; }*/
+
+.navbar, .navbar-inverse, .navbar-nav, .navbar-default, .navbar-brand, #nav-search, #id-search, a.footer-link, #footer {
+    color: #d9edf7 !important;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/*html, body {*/
+    /*margin: 0 !important;*/
+    /*min-height: 100vh !important;*/
+/*}*/
+
+
+#wrapper {
+  min-height: 100%;
+  position: relative;
+}
+/*nav {*/
+  /*padding: 10px;*/
+/*}*/
+
+article {
+  padding-bottom: 100px;
+  /* Height of the footer element */
+}
+footer {
+  width: 100%;
+  height: 120px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+@media screen and (min-width: 750px) {
+    #plot.home-plot {
+        padding-left: 10%;
+    }
+}
+.alert {
+    display: flex;
+    flex-direction: row;
+}
+
+.alert .glyphicon {
+    margin-right: 8px;
+    align-self: center;
+   font-size: 30px !important;
+}
+
+
+
+
+
+@media screen and (min-width: 1400px) {
+    #plot.home-plot {
+        padding-left: 30%;
+    }
+}
+
+
+@media screen and (max-width: 970px) {
+    .pg_content {
+        padding-bottom: 200px !important;
+    }
+}
+
+@media screen and (max-width: 765px) {
+    #plot {
+        padding-top: 100px !important;
+        padding-bottom: 150px !important;
+    }
+
+    #plot-dash {
+        padding-bottom: 110px !important;
+    }
+}
+
+
+
+
+.row.display-flex {
+  display: flex;
+  flex-wrap: wrap;
+}
+.row.display-flex > [class*='col-'] {
+  display: flex;
+  flex-direction: column;
+}
+
+.vertical-center {
+  min-height: 50%;  /* Fallback for browsers do NOT support vh unit */
+  min-height: 50vh; /* These two lines are counted as one :-)       */
+
+  display: flex;
+  align-items: center;
+}
+
+.navbar-inverse .navbar-nav > li > a, .navbar-nav > a {
+    color: #d9edf7 !important;
+}
+
+
+/*.navbar-nav > li > .dropdown-menu { */
+/*background-color: #101010;*/
+/*color: #d9edf7 !important;*/
+/*}*/
+
+.ct-point {
+    stroke-width: 3px !important;
+    stroke-linecap: round;
+}
+
+.ct-series-a .ct-point {
+    stroke: #d70206 !important;
+}
+
+.ct-series-b .ct-point {
+    stroke: rgba(0, 0, 0, 0.37) !important;
+}
+
+g.mpld3-xaxis, g.mpld3-yaxis {
+    display: none;
+}
+
+.v-center {
+    position: relative;
+    transform: translateY(50%);
+}
+
+.incl-enrol {
+    padding: 0;
+    margin: 0;
+    float: left;
+}
+
+#completeness_instructions {
+    font-size: 80%;
+    font-style: italic;
+    padding-top: 5%;
+
+}
+
+.nickname-cont {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+
+}

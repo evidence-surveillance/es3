@@ -1,0 +1,22 @@
+
+
+<div class = "container"><div class="row">
+<h1 class="display-3 text-left">{{ reviews|length|string + ' results for "'+searchterm+'"' }}</h1>
+<hr>
+
+
+    <ul class="list-group">
+
+        {% for review in reviews %}
+                <li class="list-group-item">
+                <a href="/search?searchterm={{ review.review_id }}">{{ review.title }}</a>
+                    <br><small><em>{{ review.year }}</em></small>
+            </li>
+
+            {% endfor %}
+
+
+    </ul>
+
+</div>
+</div>

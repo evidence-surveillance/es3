@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+    <div class="container pg_content">
+        <h1 class="display-3 text-left">Saved Reviews</h1>
+        <hr>
+
+        <div class="row">
+
+
+            <ul class="list-group">
+                {% if reviews %}
+                    {% for review in reviews %}
+                        <li class="list-group-item">
+                            <a href="/search?searchterm={{ review.review_id }}">{{ review.title }}</a>
+                            <span class="pull-right">
+                                       <favorite-star class="save_review" id="{{ review.review_id }}" style="font-size: 30px;" active></favorite-star>
+                            </span>
+                            <br>
+                            <small><em>{{ review.year }}</em></small>
+
+
+                        </li>
+
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info col-xs-12" role="alert">
+                        <span class="glyphicon glyphicon-info-sign span-gly"></span>
+                        Looks like there's nothing here :(
+                    </div>
+                {% endif %}
+
+            </ul>
+
+
+        </div>
+    </div>
+    {{ super() }}
+
+{% endblock %}

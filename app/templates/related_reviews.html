@@ -1,0 +1,7 @@
+{% if related_reviews %}
+<h3>Related reviews</h3>
+{% for review in related_reviews %}
+<a href ='/search?searchterm={{ review.review_id }}'>{{ review.title }}</a>
+    <hr>
+{% endfor %}
+{% endif %}

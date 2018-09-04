@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+
+    <div class="container pg_content">
+    <h1 class ="display-3 text-left">Browse by category</h1>
+    <hr>
+
+        <div class="row">
+
+
+          <ul class="list-group">
+
+        {% for category in categories %}
+            <li class="list-group-item">
+                <span class="badge" id = "{{ category.code }}">...</span>
+                   <a href="/category/{{ category.id }}">{{ category.name }}</a>
+            </li>
+                {% endfor %}
+
+        </ul>
+
+
+        </div>
+    </div>
+    {{ super() }}
+
+{% endblock %}
