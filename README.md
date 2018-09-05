@@ -35,17 +35,20 @@ The following assumes you have all of the recommended tools listed above install
     $ source bin/activate
     $ (trial2rev) pip install -r requirements.txt
 
+#### 3. Create `config.py` file for your local setup based on `config.py.example`:
+Being sure to include all of the config values listed, including your PostgreSQL username & password, the name of the database you'll be creating (`trial2rev` in this example),
+flask secret key, EUtils API key, mail server details, etc.
 
 
-#### 5. Connect to PostgreSQL and create the database
+#### 4. Connect to PostgreSQL and create the database:
     $ (trial2rev) psql postgres
     $ postgres=> CREATE DATABASE trial2rev;
     $ postgres=> \q
 
-#### 6. Create tables for the database
+#### 5. Create tables for the database:
     $  psql -f test/data/srss.sql trial2rev
 
-#### 7. Populate the database
+#### 6. Populate the database:
 You can populate the database with systematic reviews, trial registry
 entries, and trial publications by executing the relevant methods in
 `remote_tasks.py`. It is recommended that you first pull trial registry entries from
@@ -68,7 +71,7 @@ which will pull all registered trials added or updated in the last
 
 this will also automatically retrieve linked trials for each review found via CrossRef or CDSR
 
-#### 8. Make predictions
+#### 7. Make predictions:
 First, you'll need to generate the tfidf matrix of trial registry text
 
     $ >>> rt.update_tfidf()
@@ -84,7 +87,7 @@ running matrix factorization to predict addidional relevant trials for these rev
     $ >>> import matfac_impl as mi
     $ >>> mi.update_results()
 
-#### 9. Generate TSNE
+#### 8. Generate TSNE:
 You'll recieve errors if you attempt to access the website without generating a TSNE
 plot of the trial registry tfidf scores. You can do this by calling the method:
 
