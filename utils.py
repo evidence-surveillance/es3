@@ -25,53 +25,6 @@ def is_doi(str):
     return True if doi_regex.match(str) else False
 
 
-# original code from metapub https://bitbucket.org/metapub/metapub/src/2fc6c99c7ce3ebd38a44f4f45fa0bb6e78b4d5c9/metapub/pubmedfetcher.py?at=default&fileviewer=file-view-default
-def _reduce_author_string(author_string):
-    """ attempt to extract authors from a string"""
-    # try splitting by commas
-    authors = author_string.split(',')
-    if len(authors) < 2:
-        # try splitting by semicolons
-        authors = author_string.split(';')
-
-    author1 = authors[0]
-    # presume last name is at the end of the string
-    return author1.split(' ')[-1]
-
-
-# original code from metapub https://bitbucket.org/metapub/metapub/src/2fc6c99c7ce3ebd38a44f4f45fa0bb6e78b4d5c9/metapub/utils.py?at=default&fileviewer=file-view-default
-def remove_chars(inp, chars=PUNCS_WE_DONT_LIKE, urldecode=False):
-    """ Remove target characters from input string.
-    :param inp: (str)
-    :param chars: (str) characters to remove [default: utils.PUNCS_WE_DONT_LIKE]
-    :param urldecode: (bool) whether to first urldecode the input string [default: False]
-    """
-    if urldecode:
-        inp = unquote(inp)
-
-    for char in chars:
-        inp = inp.replace(char, '')
-    return inp
-
-
-# original code from metapub https://bitbucket.org/metapub/metapub/src/2fc6c99c7ce3ebd38a44f4f45fa0bb6e78b4d5c9/metapub/utils.py?at=default&fileviewer=file-view-default
-def lowercase_keys(dct):
-    """ Takes an input dictionary, returns dictionary with all keys lowercased. """
-    result = {}
-    for key, value in list(dct.items()):
-        result[key.lower()] = value
-    return result
-
-
-# original code from metapub https://bitbucket.org/metapub/metapub/src/2fc6c99c7ce3ebd38a44f4f45fa0bb6e78b4d5c9/metapub/utils.py?at=default&fileviewer=file-view-default
-def kpick(args, options, default=None):
-    """ return value in args that matches any of the keys in options """
-    for opt in options:
-        if args.get(opt, None):
-            return args[opt]
-    return default
-
-
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in xrange(0, len(l), n):
