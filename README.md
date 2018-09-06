@@ -82,7 +82,7 @@ then, you can trigger `basicbot1` and `basicbot2` which predict relevant trials 
     $ >>> rt.update_basicbot2()
 
 once you have a number of reviews with a few included trials each, you can try
-running matrix factorization to predict addidional relevant trials for these reviews
+running matrix factorization to predict addidional relevant trials for these reviews. Credit to [@dsurian](https://github.com/dsurian) for the code, repo can be found [here](https://github.com/dsurian/matfac).
 
     $ >>> import matfac_impl as mi
     $ >>> mi.update_results()
