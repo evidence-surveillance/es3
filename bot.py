@@ -404,7 +404,7 @@ def cochrane_ongoing_excluded(doi, review_id, sess_id=None):
         socketio.sleep(0)
     base_url = "https://www.cochranelibrary.com/cdsr/doi/{}/references".format(doi)
     try:
-        r = requests.get(base_url)
+        r = requests.get(base_url,headers={'User-Agent': 'trial2rev'})
     except requests.exceptions.TooManyRedirects:
         if sess_id:
             socketio.emit('cochranebot_update', {'msg': 'nothing found by cochranebot'}, room=sess_id)
@@ -512,7 +512,7 @@ def cochranebot(doi, review_id, sess_id=None):
         socketio.sleep(0)
     base_url = "https://www.cochranelibrary.com/cdsr/doi/{}/references".format(doi)
     try:
-        r = requests.get(base_url)
+        r = requests.get(base_url, headers={'User-Agent': 'trial2rev'})
     except requests.exceptions.TooManyRedirects:
         if sess_id:
             socketio.emit('cochranebot_update', {'msg': 'nothing found by cochranebot'}, room=sess_id)
