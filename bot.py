@@ -24,7 +24,7 @@ reload(sys)
 from celery.task.control import inspect, revoke
 import time
 import lxml
-import request_data
+import ecitmatch_tools
 
 sys.setdefaultencoding("utf8")
 
@@ -116,7 +116,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
             remaining = [x for x in references if ('DOI' not in x or ('DOI' in x and x['DOI'] in dois)) and (
                         'first-page' in x or 'author' in x or 'article-title' in x or 'volume' in x or 'journal-title' in x or 'year' in x)]
             if remaining:
-                citation_pmids = request_data.batch_pmids_for_citation(remaining, debug=False)
+                citation_pmids = ecitmatch_tools.batch_pmids_for_citation(remaining, debug=False)
                 check_metadata = []
                 if citation_pmids:
                     for i, citation in enumerate(citation_pmids):
@@ -274,7 +274,7 @@ def batch_doi2pmid(dois):
             if 'family' in cit['author'][0]:
                 parsed_cit['aulast'] = cit['author'][0]['family']
         parsed_citations.append(parsed_cit)
-    pmids = request_data.batch_pmids_for_citation(parsed_citations, debug=False)
+    pmids = ecitmatch_tools.batch_pmids_for_citation(parsed_citations, debug=False)
     return pmids
 
 
