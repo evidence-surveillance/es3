@@ -115,4 +115,9 @@ version of trial2rev!
    Once logged in, you can create new users here: http://127.0.0.1:5000/admin
 
 
+## Acknowledgements
 
+I have incorporated modified and original code from the [metapub](https://bitbucket.org/metapub/metapub) library into
+`ecitmatch_tools.py`, which is licensed under the Apache 2.0 license.
+I have also used my own fork of the [eutils](https://github.com/biocommons/eutils) library, to which I have added functionality to extract additional metadata from PubMed articles.
+I cannot be grateful enough to all contributors of both of these libraries, which have been absolutely instrumental in the development of this project.
