@@ -42,7 +42,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
     if sess_id:
         socketio = SocketIO(message_queue='amqp://localhost')
     ec = Client(api_key=eutils_key)
-    cr = Crossref(mailto='paige.newman@mq.edu.au')
+    cr = Crossref(mailto=config.MAIL_USERNAME)
     if not review_doi:
         while True:
             try:
