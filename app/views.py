@@ -656,7 +656,7 @@ def reset():
         html = render_template(
             'recover.html',
             recover_url=recover_url)
-        msg = Message(subject, sender="paige.newman1@students.mq.edu.au", recipients=[user.id])
+        msg = Message(subject, sender=config.MAIL_USERNAME, recipients=[user.id])
         msg.body = html
         mail.send(msg)
         flash('Password reset email sent to ' + user.id)
