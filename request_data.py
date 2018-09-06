@@ -49,7 +49,7 @@ def pubmed_convert_id(known_id, desired_id):
     else:
         return None
 
-
+# adapted from metapub pmids_for_citation method https://bitbucket.org/metapub/metapub/src/2fc6c99c7ce3ebd38a44f4f45fa0bb6e78b4d5c9/metapub/pubmedfetcher.py?at=default&fileviewer=file-view-default
 def batch_pmids_for_citation(citations, debug=False):
     """
     returns list of pmids for batch of citations. requires at least 3/5 of these keyword arguments:
