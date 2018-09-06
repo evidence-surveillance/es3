@@ -301,4 +301,9 @@ create trigger vote_counts
 	for each row
 	execute procedure update_votes()
 ;
-INSERT INTO users(user_name, salt, salted_password, user_type, nickname,id)  VALUES ('admin@admin.com', 'b27315059583471db9739708a479f8cb','f1a6f062d3a695abe9beb5de652ffa3d5744c01301c9eedfcb167934f18aa66a','admin','admin',20);
+INSERT INTO users(user_name, salt, salted_password, user_type, nickname,id)  VALUES ('admin@admin.com', 'b27315059583471db9739708a479f8cb','f1a6f062d3a695abe9beb5de652ffa3d5744c01301c9eedfcb167934f18aa66a','admin','admin',1);
+INSERT INTO users(user_name, user_type, nickname,id)  VALUES ('crossrefbot','standard','crossrefbot',9);
+INSERT INTO users(user_name, user_type, nickname,id)  VALUES ('basicbot1','standard','basicbot1',3);
+INSERT INTO users(user_name, user_type, nickname,id)  VALUES ('basicbot2','standard','basicbot2',10);
+INSERT INTO users(user_name, user_type, nickname,id)  VALUES ('matfacbot','standard','matfacbot',11);
+INSERT INTO users(user_name, user_type, nickname,id)  VALUES ('cochranebot','standard','cochranebot',17);
