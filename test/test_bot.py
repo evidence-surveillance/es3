@@ -21,13 +21,8 @@ def handler(postgresql):
     cursor = conn.cursor()
     cursor.execute(data)
     conn.commit()
-    for user in ['testuser_1', 'testuser_2']:
-        cursor.execute("INSERT INTO users(user_name, nickname) VALUES (%s,%s);", (user, user))
-    conn.commit()
-    cursor.execute("INSERT INTO USERS(user_name, nickname, id) VALUES (%s, %s, %s);",
-                   ('cochranebot', 'cochranebot', 17))
-    cursor.execute("INSERT INTO USERS(user_name, nickname, id) VALUES (%s, %s, %s);",
-                   ('crossrefbot', 'crossrefbot', 9))
+    for i, user in enumerate(['testuser_1', 'testuser_2']):
+        cursor.execute("INSERT INTO users(user_name, nickname,id) VALUES (%s,%s,%s);", (user, user,i+20))
     conn.commit()
     conn.close()
 
