@@ -7,6 +7,8 @@ from urllib3.util import Retry
 import glob
 import os
 import config
+import dblib
+import csv
 
 res_path = config.RESOURCES_PATH
 
@@ -162,3 +164,19 @@ def most_recent_matfac_nctids():
         res_path + '/models/matfac/nct_rows_*.pickle')  # * means all if need specific format then *.csv
     latest_file = max(list_of_files, key=os.path.getctime)
     return latest_file
+
+def export_rt_links():
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor()
+    cur.execute("SELECT review_id, nct_id, upvotes-downvotes, relationship, verified from review_rtrial;")
+    trials = cur.fetchall()
+    with open('complete_review_matrix.csv','w') as complete, open('review_trial_matrix.csv','w') as all:
+        writer1 = csv.writer(complete)
+        writer2 = csv.writer(all)
+        writer1.writerow(['review_id','nct_id','net_votes','relationship'])
+        writer2.writerow(['review_id','nct_id','net_votes','relationship'])
+        for row in trials:
+            writer2.writerow(list(row)[:4])
+            if row[4]:
+                writer1.writerow(list(row)[:4])
+
