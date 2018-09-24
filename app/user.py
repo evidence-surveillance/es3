@@ -32,7 +32,7 @@ class User(UserMixin):
                 "INSERT INTO users (user_name, nickname, user_type, salt, salted_password) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (user_name) DO NOTHING RETURNING ID;",
                 (email, nickname, permissions, salt, password))
             conn.commit()
-            self.db_id = cur.fetchone(0)
+            self.db_id = cur.fetchone()
         else:
             self.id = user['user_name']
             self.password = user['salted_password']

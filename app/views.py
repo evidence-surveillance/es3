@@ -592,7 +592,7 @@ def change_password():
     @return: refreshed page content indicating success or failure
     """
     changepw_form = ChangePasswordForm(request.form)
-    user = current_user.id
+    user = User.get(current_user.id)
     if changepw_form.validate_on_submit() and user:
         if user.check_password(changepw_form.current_password.data):
             User.change_password(user, User.set_password(user, changepw_form.new_password.data))
