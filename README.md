@@ -117,6 +117,7 @@ version of trial2rev!
 
 ## Acknowledgements
 
+This project is supported by supported by the AWS Cloud Credits for Research program.   
 I have incorporated modified and original code from the [metapub](https://bitbucket.org/metapub/metapub) library into
 `ecitmatch_tools.py`, which is licensed under the Apache 2.0 license.
 I have also used my own fork of the [eutils](https://github.com/biocommons/eutils) library, to which I have added functionality to extract additional metadata from PubMed articles.
