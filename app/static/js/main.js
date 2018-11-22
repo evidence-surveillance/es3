@@ -7,8 +7,7 @@
 
 $(document).ready(function () {
 
-        var socket = io.connect('https://' + document.domain + ':' + location.port);
-
+        var socket = io.connect(window.location.protocol+'//' + document.domain + ':' + location.port);
 
         function setPubDate() {
             var pub_year = ($("#pub_date").html());
@@ -97,13 +96,13 @@ $(document).ready(function () {
                     if (plot.is(':empty') && title_div.is(':empty')) {
                         plot.append(msg['data']);
                         title_div.html(title);
-                        title_div.attr('href', 'https://surveillance-chi.mq.edu.au/search?searchterm=' + id);
+                        title_div.attr('href', '/search?searchterm=' + id);
                         title_div.fadeIn(2000);
                         both.fadeIn(2000);
                         $("#refresh_plot").fadeIn(2000);
                     } else {
                         title_div.fadeOut(2000, function () {
-                            title_div.attr('href', 'https://surveillance-chi.mq.edu.au/search?searchterm=' + id);
+                            title_div.attr('href', '/search?searchterm=' + id);
                             title_div.empty().html(title);
                         });
                         both.fadeOut(2000, function () {
@@ -237,7 +236,7 @@ $(document).ready(function () {
             }
             var url = window.location.href;
             console.log(url);
-            if (url === "https://13.210.35.191/" || url === "https://surveillance-chi.mq.edu.au/") {
+            if (window.location.pathname == '/') {
                 $(document).ready(function () {
                     console.log('triggering new plot');
                     socket.emit('get_plot', {});
