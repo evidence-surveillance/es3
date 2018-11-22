@@ -21,3 +21,4 @@ CELERY_RESULT_BACKEND = 'rpc://' # rabbitMQ
 EUTILS_KEY = 'see: https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/'
 EUTILS_EMAIL = 'your_email_here'
 EUTILS_TOOL = 'trial2rev'
+CELERY_WORKER_ADDR = 'worker@your-ip-addr.com'

@@ -6,6 +6,7 @@ from bokeh.models import Range1d
 from bokeh.embed import components
 from celery.task.control import inspect
 import utils
+import config
 
 from app import cache
 
@@ -45,7 +46,7 @@ def check_plottrials_running(sess_id):
     i = inspect()
     active_tasks = i.active()
     if active_tasks:
-        for task in active_tasks['worker@ip-172-31-14-248.ap-southeast-2.compute.internal']:
+        for task in active_tasks[config.CELERY_WORKER_ADDR]:
             if task['name'] == 'tsne.plot_trials':
                 print 'found running plot trials'
                 if 'sess_id' in task['kwargs'] and str(sess_id) in task['kwargs']:
