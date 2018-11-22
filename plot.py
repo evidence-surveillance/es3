@@ -69,7 +69,7 @@ def generate_plot_html(matrices):
     p.toolbar_location = None
     p.x_range = Range1d(start=xlim[0], end=xlim[1])
     p.y_range = Range1d(start=ylim[0], end=ylim[1])
-    p.image_url(url=[utils.most_recent_tsne_img()[18:]], x=xlim[0] - 2.0, y=ylim[1], w=ylim[1] - ylim[0] - 2.7,
+    p.image_url(url=[utils.most_recent_tsne_img()], x=xlim[0] - 2.0, y=ylim[1], w=ylim[1] - ylim[0] - 2.7,
                 h=(xlim[1] - xlim[0]) + 6.7, anchor="top_left")
 
     for i, matrix in enumerate(matrices):
