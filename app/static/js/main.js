@@ -131,6 +131,19 @@ $(document).ready(function () {
                     $("#accordion-rel").html(replacement.html());
                     calc_completeness();
                 }
+                var size_li = $("#accordion-rel").children("div.panel-default").length;
+                var x = 20;
+                $('#accordion-rel div.panel-default').hide();
+                $('#accordion-rel div.panel-default:lt('+x+')').show();
+                $('#load_more_rel').click(function () {
+                    x= (x+5 <= size_li) ? x+5 : size_li;
+                    $('#accordion-rel div.panel-default:lt('+x+')').show();
+                    if (x === size_li) {$('#load_more_rel').hide();}
+                });
+                // $('#showLess').click(function () {
+                //     x=(x-5<0) ? 3 : x-5;
+                //     $('#myList li').not(':lt('+x+')').hide();
+                // });
 
                 $(".upvote").each(function () {
                     $(this).upvote({
@@ -139,7 +152,6 @@ $(document).ready(function () {
                 });
                 console.log(msg['sort']);
                 $('.rel').removeClass('active');
-
                 $("#" + msg['sort'] + '.rel').addClass('active');
 
             }
@@ -160,7 +172,16 @@ $(document).ready(function () {
                     var node = $.parseHTML(msg['data']);
                     $("#accordion-incl").replaceWith(replacement);
                 }
-                console.log(msg['sort']);
+                var size_li = $("#accordion-incl").children("div.panel-default").length;
+                var x=20;
+                if (size_li <= x) {$('#load_more_incl').hide();}
+                $('#accordion-incl div.panel-default').hide();
+                $('#accordion-incl div.panel-default:lt('+x+')').show();
+                $('#load_more_incl').click(function () {
+                    x= (x+5 <= size_li) ? x+5 : size_li;
+                    $('#accordion-incl div.panel-default:lt('+x+')').show();
+                     if (x === size_li) {$('#load_more_incl').hide();}
+                });
                 $('.incl').removeClass('active');
 
                 $("#" + msg['sort'] + '.incl').addClass('active');
@@ -236,6 +257,40 @@ $(document).ready(function () {
             }
             var url = window.location.href;
             console.log(url);
+            if (window.location.pathname == '/') {
+                $(document).ready(function () {
+                    console.log('triggering new plot');
+                    socket.emit('get_plot', {});
+                    var plot_interval = window.setInterval(function () {
+                        socket.emit('get_plot', {});
+                    }, 10000);
+                    $(document).on("click", "#refresh_plot", function (e) {
+                        window.clearInterval(plot_interval);
+                        $("#plot").fadeOut();
+                        $("#plot_title").fadeOut();
+                        $("#refresh_plot").fadeOut();
+                        socket.emit('get_plot', {});
+                        plot_interval = window.setInterval(function () {
+                            socket.emit('get_plot', {});
+                        }, 10000);
+                    });
+                    $.ajax({
+                        url: "/unique_reviews_trials",
+                        type: 'GET',
+                        contentType: 'application/json;charset=UTF-8',
+                        success: function (data) {
+                            data = JSON.parse(data)['data'];
+                            $("#link_counts").html(
+                                '<a href="/browse">' + data['reviews'] + ' <small  style="color: #337ab7 !important;">systematic reviews</small></a><small> connected to</small>' + data['trials'] + ' <small>trials</small>'
+                            );
+                            $("#link_counts").fadeIn(1000);
+
+                        }
+                    });
+
+
+                });
+            }
             if (window.location.pathname == '/') {
                 $(document).ready(function () {
                     console.log('triggering new plot');
