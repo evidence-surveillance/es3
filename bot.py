@@ -404,7 +404,7 @@ def cochrane_ongoing_excluded(doi, review_id, sess_id=None):
         socketio.sleep(0)
     base_url = "https://www.cochranelibrary.com/cdsr/doi/{}/references".format(doi)
     try:
-        r = requests.get(base_url,headers={'User-Agent': 'trial2rev'})
+        r = requests.get(base_url,headers={'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36'})
     except requests.exceptions.TooManyRedirects:
         if sess_id:
             socketio.emit('cochranebot_update', {'msg': 'nothing found by cochranebot'}, room=sess_id)
@@ -512,7 +512,7 @@ def cochranebot(doi, review_id, sess_id=None):
         socketio.sleep(0)
     base_url = "https://www.cochranelibrary.com/cdsr/doi/{}/references".format(doi)
     try:
-        r = requests.get(base_url, headers={'User-Agent': 'trial2rev'})
+        r = requests.get(base_url, headers={'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36'})
     except requests.exceptions.TooManyRedirects:
         if sess_id:
             socketio.emit('cochranebot_update', {'msg': 'nothing found by cochranebot'}, room=sess_id)
