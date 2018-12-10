@@ -58,12 +58,9 @@ def get_plot(data):
         test_id = random.choice(ids)
         review_data = crud.review_medtadata_db(test_id)
         trials = crud.get_review_trials_fast(test_id, usr=current_user if current_user.is_authenticated else None)
-        relevant = {'ids': [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant'],
-                    'score': [trial['upvotes'] - trial['downvotes'] for trial in trials['reg_trials'] if
-                              trial['relationship'] == 'relevant']}
-        verified = {'ids': [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included'],
-                    'score': []}
-        plot.plot_trials.delay([relevant, verified], page='home', title=review_data['title'], review_id=test_id,
+        relevant = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant']
+        verified = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included']
+        plot.plot_trials.delay(relevant, verified=verified, page='home', title=review_data['title'], review_id=test_id,
                                sess_id=request.sid)
 
 
@@ -79,19 +76,16 @@ def refresh_trials(json):
     locked = crud.review_lock_status(id)
     sort = json['sort'] if 'sort' in json else 'total_votes'
     trials = crud.get_review_trials_fast(id, order=sort, usr=current_user if current_user.is_authenticated else None)
-    relevant = {'ids': [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant'],
-                'score': [trial['upvotes'] - trial['downvotes'] for trial in trials['reg_trials'] if
-                          trial['relationship'] == 'relevant']}
-    verified = {'ids': [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included'],
-                'score': []}
-    if (type == 'rel' and relevant['ids']) or (type == 'incl' and verified['ids']):
+    relevant = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant']
+    verified = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included']
+    if (type == 'rel' and relevant) or (type == 'incl' and verified):
         emit('page_content',
              {'section': 'rel_trials' if type == 'rel' else 'incl_trials', 'sort': sort,
               'data': render_template('rel_trials.html' if type == 'rel' else 'incl_trials.html',
                                       reg_trials=trials['reg_trials'],
                                       locked=locked)}, room=request.sid)
         if plot_bool and not plot.check_plottrials_running(request.sid):
-            plot.plot_trials.delay([relevant, verified], page='reviewdetail', sess_id=request.sid)
+            plot.plot_trials.delay(relevant, verified=verified, page='reviewdetail', sess_id=request.sid)
     elif type == 'incl' and not verified['ids']:
         emit('page_content',
              {'section': 'incl_trials', 'sort': sort,
@@ -214,19 +208,16 @@ def search(json):
              room=request.sid)
         eventlet.sleep(0)
         trials = crud.get_review_trials_fast(review[0], usr=current_user if current_user.is_authenticated else None)
-        verified = {'ids': [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included'],
-                    'score': []}
-        relevant = {'ids': [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant'],
-                    'score': [trial['upvotes'] - trial['downvotes'] for trial in trials['reg_trials'] if
-                              trial['relationship'] == 'relevant']}
+        relevant = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant']
+        verified = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included']
         emit('search_update', {'msg': 'Generating cool plots...'}, room=request.sid)
         eventlet.sleep(0)
-        plot.plot_trials.delay([relevant, verified], page='reviewdetail', sess_id=request.sid)
+        plot.plot_trials.delay(relevant, verified=verified, page='reviewdetail', sess_id=request.sid)
         emit('page_content',
              {'section': 'rel_trials', 'data': render_template('rel_trials.html', reg_trials=trials['reg_trials'],
                                                                locked=review['included_complete'])}, room=request.sid)
         eventlet.sleep(0)
-        if verified['ids']:
+        if verified:
             emit('page_content',
                  {'section': 'incl_trials', 'data': render_template('incl_trials.html', reg_trials=trials['reg_trials'],
                                                                     locked=review['included_complete'])},
