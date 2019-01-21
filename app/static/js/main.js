@@ -256,42 +256,7 @@ $(document).ready(function () {
                 });
             }
             var url = window.location.href;
-            console.log(url);
-            if (window.location.pathname == '/') {
-                $(document).ready(function () {
-                    console.log('triggering new plot');
-                    socket.emit('get_plot', {});
-                    var plot_interval = window.setInterval(function () {
-                        socket.emit('get_plot', {});
-                    }, 10000);
-                    $(document).on("click", "#refresh_plot", function (e) {
-                        window.clearInterval(plot_interval);
-                        $("#plot").fadeOut();
-                        $("#plot_title").fadeOut();
-                        $("#refresh_plot").fadeOut();
-                        socket.emit('get_plot', {});
-                        plot_interval = window.setInterval(function () {
-                            socket.emit('get_plot', {});
-                        }, 10000);
-                    });
-                    $.ajax({
-                        url: "/unique_reviews_trials",
-                        type: 'GET',
-                        contentType: 'application/json;charset=UTF-8',
-                        success: function (data) {
-                            data = JSON.parse(data)['data'];
-                            $("#link_counts").html(
-                                '<a href="/browse">' + data['reviews'] + ' <small  style="color: #337ab7 !important;">systematic reviews</small></a><small> connected to</small>' + data['trials'] + ' <small>trials</small>'
-                            );
-                            $("#link_counts").fadeIn(1000);
-
-                        }
-                    });
-
-
-                });
-            }
-            if (window.location.pathname == '/') {
+                if (window.location.pathname === '/') {
                 $(document).ready(function () {
                     console.log('triggering new plot');
                     socket.emit('get_plot', {});
