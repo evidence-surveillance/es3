@@ -67,7 +67,8 @@ def generate_plot_html(relevant, included=None):
     p.toolbar_location = None
     p.x_range = Range1d(start=xlim[0], end=xlim[1])
     p.y_range = Range1d(start=ylim[0], end=ylim[1])
-    p.image_url(url=[utils.most_recent_tsne_img()], x=xlim[0] - 2.0, y=ylim[1], w=ylim[1] - ylim[0] - 2.7,
+    image_path = utils.most_recent_tsne_img()
+    p.image_url(url=[image_path[image_path.index('static'):]], x=xlim[0] - 2.0, y=ylim[1], w=ylim[1] - ylim[0] - 2.7,
                 h=(xlim[1] - xlim[0]) + 6.7, anchor="top_left")
     p.scatter(relevant[:, 0], relevant[:, 1],
               fill_color='#fc6e2d', fill_alpha=0.8,

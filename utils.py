@@ -121,7 +121,7 @@ def most_recent_tsne_img():
     list_of_files = glob.glob(
         res_path + '/app/static/images/tsne*.png')  # * means all if need specific format then *.csv
     latest_file = max(list_of_files, key=os.path.getctime)
-    return latest_file[latest_file.index("static"):]
+    return latest_file
 
 
 def most_recent_tfidf_labels():
