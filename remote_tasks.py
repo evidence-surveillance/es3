@@ -375,7 +375,7 @@ def regenerate_tsne():
     # generate new _tsne background plot
     _new_tsne_img(new_tsne, date)
     # uncomment this if uploading to a remote server
-    # upload_models()
+    upload_models()
 
 
 def _tsne(input_matrix, date):
@@ -415,14 +415,17 @@ def upload_models():
     tsne_matrix = utils.most_recent_tsne()
     tsne_image = utils.most_recent_tsne_img()
     for x in [tfidf_labels, tsne_matrix, tsne_image]:
-        print datetime.fromtimestamp(os.path.getctime(x))
-        if datetime.fromtimestamp(os.path.getctime(x)) < datetime.now() - timedelta(days=1):
+        print datetime.fromtimestamp(os.path.getmtime(x))
+        if datetime.fromtimestamp(os.path.getmtime(x)) < datetime.now() - timedelta(days=2):
             print 'too old!'
-            print datetime.fromtimestamp(os.path.getctime(x))
             return
     for x in [tfidf_labels, tsne_matrix, tsne_image, tfidf_matrix, tfidf_vec]:
         cmd = 'scp -i ' + config.SCP_KEYFILE + ' ' + x + ' ' + config.SCP_USER + '@' + config.SCP_HOST + ':' + replace_local_path(
             x)
+        print cmd
+        call(cmd.split())
+    for x in [tfidf_labels, tfidf_matrix]:
+        cmd = 'scp -i ' + config.SCP2_KEYFILE + ' ' + x + ' ' + config.SCP2_USER + '@' + config.SCP2_HOST + ':' + config.REMOTE_PATH2+'/models/tfidf/'+x.split('/')[-1]
         print cmd
         call(cmd.split())
 

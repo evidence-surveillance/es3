@@ -106,63 +106,63 @@ def retry_get(base_url, params):
 def most_recent_tfidf():
     list_of_files = glob.glob(
         res_path + '/models/tfidf/tfidf_matrix_*.npz')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 
 def most_recent_tsne():
     list_of_files = glob.glob(
         res_path + '/models/tsne/tsne_matrix_*.npy')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 
 def most_recent_tsne_img():
     list_of_files = glob.glob(
         res_path + '/app/static/images/tsne*.png')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 
 def most_recent_tfidf_labels():
     list_of_files = glob.glob(
         res_path + '/models/tfidf/nct_ids*.pickle')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 
 def most_recent_tfidf_vec():
     list_of_files = glob.glob(
         res_path + '/models/tfidf/vectorizer*.pickle')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 
 def most_recent_trialsxreviews():
     list_of_files = glob.glob(
         res_path + '/models/matfac/trials_x_reviews*.npz')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 
 def most_recent_matfac():
     list_of_files = glob.glob(
         res_path + '/models/matfac/matfac_results_*.npy')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 
 def most_recent_matfac_pmids():
     list_of_files = glob.glob(
         res_path + '/models/matfac/pmid_cols_*.pickle')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 
 def most_recent_matfac_nctids():
     list_of_files = glob.glob(
         res_path + '/models/matfac/nct_rows_*.pickle')  # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
 def export_rt_links():
