@@ -7,7 +7,7 @@
 
 $(document).ready(function () {
 
-        var socket = io.connect(window.location.protocol+'//' + document.domain + ':' + location.port);
+        var socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);
 
         function setPubDate() {
             var pub_year = ($("#pub_date").html());
@@ -120,6 +120,7 @@ $(document).ready(function () {
             }
 
 
+            }
             if (msg['section'] === 'rel_trials') {
                 var rel_container = $("#rel_trials_container");
                 if (rel_container.is(':empty')) {
@@ -134,10 +135,10 @@ $(document).ready(function () {
                 var size_li = $("#accordion-rel").children("div.panel-default").length;
                 var x = 20;
                 $('#accordion-rel div.panel-default').hide();
-                $('#accordion-rel div.panel-default:lt('+x+')').show();
+                $('#accordion-rel div.panel-default:lt(' + x + ')').show();
                 $('#load_more_rel').click(function () {
-                    x= (x+5 <= size_li) ? x+5 : size_li;
-                    $('#accordion-rel div.panel-default:lt('+x+')').show();
+                    x = (x + 5 <= size_li) ? x + 5 : size_li;
+                    $('#accordion-rel div.panel-default:lt(' + x + ')').show();
                     if (x === size_li) {$('#load_more_rel').hide();}
                 });
                 // $('#showLess').click(function () {
@@ -173,13 +174,13 @@ $(document).ready(function () {
                     $("#accordion-incl").replaceWith(replacement);
                 }
                 var size_li = $("#accordion-incl").children("div.panel-default").length;
-                var x=20;
+                var x = 20;
                 if (size_li <= x) {$('#load_more_incl').hide();}
                 $('#accordion-incl div.panel-default').hide();
-                $('#accordion-incl div.panel-default:lt('+x+')').show();
+                $('#accordion-incl div.panel-default:lt(' + x + ')').show();
                 $('#load_more_incl').click(function () {
-                    x= (x+5 <= size_li) ? x+5 : size_li;
-                    $('#accordion-incl div.panel-default:lt('+x+')').show();
+                    x = (x + 5 <= size_li) ? x + 5 : size_li;
+                    $('#accordion-incl div.panel-default:lt(' + x + ')').show();
                      if (x === size_li) {$('#load_more_incl').hide();}
                 });
                 $('.incl').removeClass('active');
@@ -488,7 +489,7 @@ $(document).ready(function () {
         $(document).on("click", ".save_review", function (e) {
             var val = true;
             var review_id = this.id;
-            if (typeof($(this).attr('active')) === 'undefined') {
+            if (typeof ($(this).attr('active')) === 'undefined') {
                 val = false;
             }
             console.log(val);
