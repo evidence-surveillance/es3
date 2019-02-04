@@ -390,6 +390,49 @@ def docsim(review_id, sess_id=None):
 
 
 @celery_inst.task()
+def docsim_freetext(document, sess_id=None):
+    """
+    use document similarity to recommend trials based on similarity to title & abstract text of review
+    @param review_id: PMID of review
+    @param sess_id: session ID if transitting progress via websocket
+    """
+    if sess_id:
+        socketio = SocketIO(message_queue='amqp://localhost')
+        socketio.emit('docsim_update', {'msg': 'started basicbot'}, room=sess_id)
+        eventlet.sleep(0)
+    if not document:
+        if sess_id:
+            socketio.emit('docsim_update', {'msg': 'Unable to make predictions. Basicbot complete'}, room=sess_id)
+        return
+    tf_transformer = TfidfVectorizer(use_idf=False)
+    trials_vectorizer = pickle.load(open(utils.most_recent_tfidf_vec()))
+    normalised_tf_vector = tf_transformer.fit_transform([document])
+    if sess_id:
+        socketio.emit('docsim_update', {'msg': 'vectorising stuff...'}, room=sess_id)
+        eventlet.sleep(0)
+    tfidf_matrix = scipy.sparse.load_npz(utils.most_recent_tfidf())
+    idf_indices = [trials_vectorizer.vocabulary_[feature_name] for feature_name in tf_transformer.get_feature_names() if
+                   feature_name in trials_vectorizer.vocabulary_.keys()]
+    tf_indices = [tf_transformer.vocabulary_[feature_name] for feature_name in trials_vectorizer.get_feature_names() if
+                  feature_name in tf_transformer.vocabulary_.keys()]
+    final_idf = trials_vectorizer.idf_[np.array(idf_indices)]
+    final_tf = np.array(normalised_tf_vector.toarray()[0])[np.array(tf_indices)]
+    review_tfidf = np.asmatrix(final_tf * final_idf)
+    tfidf_matrix = tfidf_matrix[:, np.array(idf_indices)]
+    if sess_id:
+        socketio.emit('docsim_update', {'msg': 'calculating similarity...'}, room=sess_id)
+        eventlet.sleep(0)
+    cos_sim = cosine_similarity(review_tfidf, tfidf_matrix).flatten()
+    related_docs_indices = cos_sim.argsort()[:-100:-1]
+    ids = np.load(utils.most_recent_tfidf_labels())
+    to_insert = ids[np.array(related_docs_indices)]
+    if sess_id:
+        # socketio.emit('docsim_update', {'msg': 'basicbot complete!'}, room=sess_id)
+        eventlet.sleep(0)
+    return list(to_insert)
+
+
+@celery_inst.task()
 def cochrane_ongoing_excluded(doi, review_id, sess_id=None):
     """
     extract & save ongoing and excluded trial IDs for a review from Cochrane Library website text
