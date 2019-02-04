@@ -61,6 +61,18 @@ def get_plot():
                'ContentType': 'application/json'}
 
 
+@socketio.on('freetext_trials')
+def freetext_trials(data):
+    freetext = data['text']
+    trial_ids = bot.docsim_freetext(freetext)
+    trials = crud.get_trials_by_id(trial_ids)
+    print trial_ids
+    emit('page_content',
+         {'section': 'recommended_trials', 'data': render_template('recommended_trials.html', reg_trials=trials)})
+    plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
+                           sess_id=request.sid)
+
+
 @socketio.on('refresh_trials')
 def refresh_trials(json):
     """
@@ -408,7 +420,6 @@ def incl_rel():
     crud.change_relationship(link_id, 'relevant')
     return json.dumps({'success': True, 'message': 'Trial moved successfully'}), 200, {
         'ContentType': 'application/json'}
-
 
 
 @app.route('/download/<detail>', methods=['GET'])
