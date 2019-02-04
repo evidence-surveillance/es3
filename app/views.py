@@ -47,6 +47,18 @@ def trigger_basicbot2(json):
         bot.basicbot2.delay(review_id=review, sess_id=request.sid)
 
 
+@socketio.on('freetext_trials')
+def freetext_trials(data):
+    freetext = data['text']
+    trial_ids = bot.docsim_freetext(freetext)
+    trials = crud.get_trials_by_id(trial_ids)
+    print trial_ids
+    emit('page_content',
+         {'section': 'recommended_trials', 'data': render_template('recommended_trials.html', reg_trials=trials)})
+    plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
+                           sess_id=request.sid)
+
+
 @socketio.on('get_plot')
 def get_plot(data):
     """ generate new random TSNE plot for homepage """
