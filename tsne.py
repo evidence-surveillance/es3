@@ -162,9 +162,6 @@ def get_tsne_points():
 
 def test_bokeh(matrices):
 
-
-    # TOOLS = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
-
     p = figure(plot_width=550, plot_height=550)
     xlim = (-69.551894338989271, 64.381507070922851)
     ylim = (-70.038440855407714, 70.644477995300306)
