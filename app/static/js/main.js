@@ -291,6 +291,14 @@ $(document).ready(function () {
 
                 });
             }
+            if (window.location.pathname === '/blank') {
+                $(document).ready(function () {
+                    $(document).on("click", "#submit_text", function (e) {
+                        var text = $("#free_text").val();
+                        socket.emit('freetext_trials', {'text': text});
+                    });
+                });
+            }
         });
 
         socket.on('search_update', function (msg) {
@@ -483,6 +491,13 @@ $(document).ready(function () {
         $(document).on("click", ".rel_incl", function (e) {
             var nct_id = e.target.id.substring(0, 11);
             move_rel_incl(nct_id);
+        });
+
+        $(document).on("click", ".rec_rel_incl", function (e) {
+            var nct_id = e.target.id.substring(0, 11);
+            var panel = $('#panel_' + nct_id);
+            $(panel).detach().appendTo('#accordion-incl');
+            $('#'+nct_id+'_movincl').css('visibility', 'hidden');
         });
 
 
