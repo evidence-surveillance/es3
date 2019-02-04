@@ -629,6 +629,19 @@ def get_review_trials_fast(review_id, order='total_votes', usr=None):
         reg_trials[i] = trial.copy()
     return {'reg_trials': reg_trials}
 
+def get_trials_by_id(nct_list):
+    """
+    get the details of all trials specified in nct_list
+    :param nct_list:
+    :return: list of trial dicts
+    """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute("SELECT tr.nct_id, tr.brief_title, tr.overall_status, tr.enrollment, tr.completion_date,json_agg(distinct t.trialpub_id::TEXT) as trialpubs FROM tregistry_entries tr left join trialpubs_rtrial t on (tr.nct_id = t.nct_id and tr.nct_id in %s ) where tr.nct_id in %s  GROUP BY tr.nct_id, tr.brief_title, tr.overall_status, tr.enrollment, tr.completion_date;",(tuple(nct_list),tuple(nct_list)))
+    trials = cur.fetchall()
+    conn.close()
+    return trials
+
 
 def get_trial_xml(nct_id):
     """ download & return the XML for the specified trial from ClincialTrials.gov  """
