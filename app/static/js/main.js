@@ -119,6 +119,17 @@ $(document).ready(function () {
 
             }
 
+            if (msg['section'] === 'recommended_trials') {
+                var rel_container = $("#rel_trials_container");
+                if (rel_container.is(':empty')) {
+                    rel_container.html(msg['data']);
+                    rel_container.slideDown(2000);
+                    $("#incl_trials_container").slideDown(2000);
+                } else {
+                    var node = $.parseHTML(msg['data']);
+                    var replacement = $(node).filter('#accordion-rel');
+                    $("#accordion-rel").html(replacement.html());
+                }
 
             }
             if (msg['section'] === 'rel_trials') {
