@@ -28,10 +28,7 @@ login_manager.login_view = 'login'
 
 ts = URLSafeTimedSerializer(app.secret_key)
 
-
-
 eutils_key = config.EUTILS_KEY
-
 
 
 @socketio.on('connect')
@@ -367,6 +364,12 @@ def submit_login():
 def search():
     """ load search page """
     return render_template('reviewdetail.html')
+
+
+@app.route('/blank', methods=['GET'])
+def blank():
+    """ load search page """
+    return render_template('blank.html')
 
 
 @app.route('/saved', methods=['GET'])
