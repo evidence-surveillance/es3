@@ -587,29 +587,15 @@ def get_review_trials_fast(review_id, order='total_votes', usr=None):
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     if order == 'total_votes' or order == None:
         cur.execute(
-            "SELECT "
-            "tregistry_entries. *, review_rtrial. *, COALESCE(review_rtrial.upvotes, 0) + COALESCE(review_rtrial.downvotes, 0) AS sum, json_agg(distinct array[v.vote_type::TEXT, u.nickname::TEXT]) as voters, json_agg(distinct t.trialpub_id::TEXT) as trialpubs "
-            " FROM "
-            "tregistry_entries "
-            "INNER "
-            "JOIN "
-            "review_rtrial "
-            "ON "
-            "tregistry_entries.nct_id = review_rtrial.nct_id "
-            "left JOIN votes v ON review_rtrial.id = v.link_id "
-            "left JOIN users u ON v.user_id = u.id "
-            "  left join trialpubs_rtrial t on tregistry_entries.nct_id = t.nct_id "
-            "where "
-            "review_rtrial.review_id = %s GROUP BY tregistry_entries.nct_id, review_rtrial.review_id, review_rtrial.nct_id, review_rtrial.confidence_score,"
-            "review_rtrial.upvotes, review_rtrial.downvotes, review_rtrial.verified, review_rtrial.relationship, review_rtrial.nickname, review_rtrial.id ORDER BY sum DESC;",
+            "SELECT tr.nct_id,tr.brief_title,tr.overall_status,tr.brief_summary,tr.enrollment,tr.completion_date,rt.upvotes,rt.downvotes,rt.verified,rt.relationship,COALESCE(rt.upvotes, 0) + COALESCE(rt.downvotes, 0) AS sum,json_agg(distinct array [v.vote_type::TEXT, u.nickname::TEXT]) as voters,json_agg(distinct t.trialpub_id::TEXT)  as trialpubs FROM tregistry_entries tr INNER JOIN review_rtrial rt ON tr.nct_id = rt.nct_id left JOIN votes v ON rt.id = v.link_id left JOIN users u ON v.user_id = u.id left join trialpubs_rtrial t on tr.nct_id = t.nct_id where rt.review_id = %s GROUP BY tr.nct_id, rt.review_id, rt.nct_id, rt.upvotes, rt.downvotes, rt.verified, rt.relationship ORDER BY sum DESC;",
             (review_id,))
     elif order == 'completion_date':
         cur.execute(
-            " SELECT tregistry_entries. *, review_rtrial. *, COALESCE(review_rtrial.upvotes, 0) + COALESCE(review_rtrial.downvotes, 0) AS sum, json_agg(distinct array[v.vote_type::TEXT, u.nickname::TEXT]) as voters, json_agg(distinct t.trialpub_id::TEXT) as trialpubs FROM tregistry_entries INNER JOIN review_rtrial ON tregistry_entries.nct_id = review_rtrial.nct_id left JOIN votes v ON review_rtrial.id = v.link_id left JOIN users u ON v.user_id = u.id left join trialpubs_rtrial t on tregistry_entries.nct_id = t.nct_id where review_rtrial.review_id = %s GROUP BY tregistry_entries.nct_id, review_rtrial.review_id, review_rtrial.nct_id, review_rtrial.confidence_score, review_rtrial.upvotes, review_rtrial.downvotes, review_rtrial.verified, review_rtrial.relationship, review_rtrial.nickname, review_rtrial.id ORDER BY to_date(completion_date, 'Month YYYY') desc NULLS LAST;",
+            "SELECT tr.nct_id,tr.brief_title,tr.overall_status,tr.brief_summary,tr.enrollment,tr.completion_date,rt.upvotes,rt.downvotes,rt.verified,rt.relationship,COALESCE(rt.upvotes, 0) + COALESCE(rt.downvotes, 0) AS sum,json_agg(distinct array [v.vote_type::TEXT, u.nickname::TEXT]) as voters,json_agg(distinct t.trialpub_id::TEXT)  as trialpubs FROM tregistry_entries tr INNER JOIN review_rtrial rt ON tr.nct_id = rt.nct_id left JOIN votes v ON rt.id = v.link_id left JOIN users u ON v.user_id = u.id left join trialpubs_rtrial t on tr.nct_id = t.nct_id where rt.review_id = %s GROUP BY tr.nct_id, rt.review_id, rt.nct_id, rt.upvotes, rt.downvotes, rt.verified, rt.relationship ORDER BY to_date(completion_date, 'Month YYYY') desc NULLS LAST;",
             (review_id,))
     elif order == 'net_upvotes':
         cur.execute(
-            "SELECT tregistry_entries.*, review_rtrial.*, json_agg(distinct array [v.vote_type :: TEXT, u.nickname :: TEXT]) as voters, json_agg(distinct t.trialpub_id :: TEXT)                                  as trialpubs FROM tregistry_entries INNER JOIN review_rtrial ON tregistry_entries.nct_id = review_rtrial.nct_id left JOIN votes v ON review_rtrial.id = v.link_id left JOIN users u ON v.user_id = u.id left join trialpubs_rtrial t on tregistry_entries.nct_id = t.nct_id where review_rtrial.review_id = %s GROUP BY tregistry_entries.nct_id, review_rtrial.review_id, review_rtrial.nct_id, review_rtrial.confidence_score, review_rtrial.upvotes, review_rtrial.downvotes, review_rtrial.verified, review_rtrial.relationship, review_rtrial.nickname, review_rtrial.id ORDER BY review_rtrial.upvotes desc NULLS LAST;",
+            "SELECT tr.nct_id,tr.brief_title,tr.overall_status,tr.brief_summary,tr.enrollment,tr.completion_date,rt.upvotes,rt.downvotes,rt.verified,rt.relationship,COALESCE(rt.upvotes, 0) + COALESCE(rt.downvotes, 0) AS sum,json_agg(distinct array [v.vote_type::TEXT, u.nickname::TEXT]) as voters,json_agg(distinct t.trialpub_id::TEXT)  as trialpubs FROM tregistry_entries tr INNER JOIN review_rtrial rt ON tr.nct_id = rt.nct_id left JOIN votes v ON rt.id = v.link_id left JOIN users u ON v.user_id = u.id left join trialpubs_rtrial t on tr.nct_id = t.nct_id where rt.review_id = %s GROUP BY tr.nct_id, rt.review_id, rt.nct_id, rt.upvotes, rt.downvotes, rt.verified, rt.relationship ORDER BY rt.upvotes desc NULLS LAST;",
             (review_id,))
     reg_trials = cur.fetchall()
     reg_trials = list(reg_trials)
