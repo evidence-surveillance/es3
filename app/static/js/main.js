@@ -1,13 +1,5 @@
-/**
- * Created by User on 12/05/2017.
-
- */
-
-
-
 $(document).ready(function () {
-
-        var socket = io.connect(window.location.protocol+'//' + document.domain + ':' + location.port);
+        var socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);
 
         function setPubDate() {
             var pub_year = ($("#pub_date").html());
@@ -16,12 +8,9 @@ $(document).ready(function () {
             if (days >= 365) {
                 var years = (days / 365).toFixed(2);
                 $("#time_since_pub").html(years + ' years');
-
-            }
-            else {
+            } else {
                 $("#time_since_pub").html(days + ' days');
             }
-
         }
 
 
@@ -51,7 +40,30 @@ $(document).ready(function () {
 
         }
 
-
+        // function refresh_dashboard() {
+        //     var num_i = 0;
+        //     var interval = setInterval(function () {
+        //         var target = $("#incl_trials_container .panel").length;
+        //         $('#num_incl_trials').text(num_i);
+        //         if (num_i >= target) clearInterval(interval);
+        //         num_i++;
+        //     }, 30);
+        //     var incl_part = 0;
+        //     $(".incl-enrol").each(function () {
+        //         if (parseInt($(this).attr('title'))) {
+        //             incl_part += parseInt($(this).attr('title'));
+        //         }
+        //     });
+        //     var num_p = 0;
+        //     var interval2 = setInterval(function () {
+        //         $('#part_incl_trials').text(num_p);
+        //         if (num_p >= incl_part) {
+        //             clearInterval(interval2);
+        //             $('#part_incl_trials').text(incl_part);
+        //         }
+        //         num_p += parseInt((incl_part / 66).toFixed());
+        //     }, 30);
+        // }
         socket.on('page_content', function (msg) {
             if (msg['section'] === 'review_data') {
                 $("#review-data-container").html(msg['data']);
@@ -59,7 +71,6 @@ $(document).ready(function () {
                 $("#review-data-container").slideDown(1000);
                 $("#related-reviews").slideDown(1000);
                 setPubDate();
-
             }
             if (msg['section'] === 'search_results') {
                 console.log('recieved results');
@@ -69,57 +80,129 @@ $(document).ready(function () {
                 $(".pg_content").slideDown(1000);
                 $(".progress_div").slideUp(1000);
             }
-
             if (msg['section'] === 'plot') {
                 var plot = $("#plot");
-                var dash = $("#dash");
-                var both = $("#plot, #dash");
-                if (msg['page'] === 'reviewdetail') {
-                    if (!$.trim(plot.html())) {
-                        plot.empty().append(msg['data']);
-                        both.delay(1000).slideDown(2000);
-                        $(".progress_div").slideUp(1000);
-                    } else {
-                        console.log('not empty');
-                        plot.animate({'opacity': 0.01}, 1000, function () {
-                            plot.html(msg['data']);
-                            plot.animate({'opacity': 1}, 1000);
-                        });
-
-                    }
-
-
-                } else {
-                    var title = msg['title'];
-                    var id = msg['review_id'];
-                    var title_div = $("#plot_title");
-                    if (plot.is(':empty') && title_div.is(':empty')) {
-                        plot.append(msg['data']);
-                        title_div.html(title);
-                        title_div.attr('href', '/search?searchterm=' + id);
-                        title_div.fadeIn(2000);
-                        both.fadeIn(2000);
-                        $("#refresh_plot").fadeIn(2000);
-                    } else {
-                        title_div.fadeOut(2000, function () {
-                            title_div.attr('href', '/search?searchterm=' + id);
-                            title_div.empty().html(title);
-                        });
-                        both.fadeOut(2000, function () {
-                            plot.empty().append(msg['data']);
-                        });
-                        $("#refresh_plot").fadeOut(2000);
-                    }
-
-                    title_div.fadeIn(2000);
-                    both.fadeIn(2000);
-                    $("#refresh_plot").fadeIn(2000);
-
+                var data = msg['data'];
+                var plt = Bokeh.Plotting;
+                var xx = [];
+                for (dat in data['dates']) {
+                    xx.push(Date.parse(data['dates'][dat]));
                 }
-
+                var colors = [];
+                for (col in data['colours']) {
+                    colors.push(plt.color.apply(this, data['colours'][col]));
+                }
+                var M = data['colours'].length;
+                var yy = data['y_vals'];
+                var alpha_vals = data['alpha'];
+                var radii = data['enrollment'];
+                var pub_date = Date.parse($('#pub_date').html());
+                var ydr = new Bokeh.Range1d({start: 0, end: 8000000000000});
+                var year_padding = 3.1556952 * (10 ** 10);
+                var xdr = new Bokeh.Range1d({
+                    start: Math.min(Math.min(...xx), pub_date) - year_padding,
+                    end: Math.max(Math.max(...xx), pub_date) + year_padding
+                });
+                var label = new Bokeh.Label({
+                    x: pub_date,
+                    y: 7000000000000,
+                    text: 'Systematic Review Published',
+                    text_align: 'center',
+                    background_fill_color: 'white',
+                });
+                var pubdate = new Bokeh.Span({
+                    location: pub_date,
+                    dimension: 'height',
+                    line_color: 'black',
+                    line_dash: [5, 5]
+                });
+                var source = new Bokeh.ColumnDataSource({
+                    data: {
+                        x: xx,
+                        y: yy,
+                        colors: colors,
+                        alpha: alpha_vals,
+                        dates: data['dates'],
+                        title: data['titles'],
+                        enrollment: data['real_enrollment']
+                    }
+                });
+                var tools = "pan,crosshair,wheel_zoom,box_zoom,reset,save";
+                var p = plt.figure({
+                    tools: tools,
+                    sizing_mode: 'stretch_both',
+                    y_range: ydr,
+                    x_range: xdr,
+                    x_axis_label: 'trial completion date'
+                });
+                p.xaxis.formatter = new Bokeh.DatetimeTickFormatter({});
+                var renderers = [];
+                var circles = p.circle({field: "x"}, {field: "y"}, {
+                    source: source,
+                    radius: radii,
+                    radius_dimension: 'y',
+                    fill_color: colors,
+                    hover_fill_color: colors,
+                    fill_alpha: alpha_vals,
+                    hover_fill_alpha: alpha_vals,
+                    line_color: null,
+                    hover_line_color: 'black',
+                    selection_fill_color: colors,
+                    nonselection_fill_color: colors,
+                    selection_line_color: null,
+                    nonselection_line_color: null,
+                    selection_fill_alpha: alpha_vals,
+                    nonselection_fill_alpha: alpha_vals
+                });
+                renderers.push(circles);
+                for (i = 0; i < xx.length; i++) {
+                    p.line({
+                        x: [xx[i], xx[i]],
+                        y: [0, yy[i] - radii[i]],
+                        line_width: 1,
+                        line_color: 'black',
+                        line_alpha: 0.3
+                    })
+                }
+                var tooltip =
+                    ("<div>Completion date: @dates</div>" +
+                        "<div>ID: @title</div>" +
+                        "<div>Participants: @enrollment</div>"
+                    );
+                var hover = new Bokeh.HoverTool({
+                    tooltips: tooltip,
+                    mode: 'mouse',
+                    renderers: renderers
+                });
+                var cb = new Bokeh.CustomJS({
+                    args: {source: source}, code: '' +
+                        'var nct_id = source.data.title[cb_data.source.selected.indices[0]];' +
+                        'var to_move =  $("#panel_" + nct_id);\n' +
+                        'to_move.parent().prepend(to_move);' +
+                        'if(to_move.is(":hidden")) {to_move.show();} ' +
+                        '$("#panel_" + nct_id)[0].scrollIntoView({behaviour: "smooth"});\n' +
+                        '                        $("#panel_" + nct_id + "> .panel-heading").effect("highlight", {}, 3000);'
+                });
+                var tap = new Bokeh.TapTool({callback: cb});
+                p.add_tools(tap);
+                p.add_tools(hover);
+                p.add_layout(pubdate);
+                p.add_layout(label);
+                p.yaxis.visible = false;
+                p.xgrid.visible = false;
+                p.ygrid.visible = false;
+                if (!$.trim(plot.html())) {
+                    Bokeh.Plotting.show(p, plot);
+                    plot.slideDown(2000);
+                    $(".progress_div").slideUp(1000);
+                } else {
+                    plot.animate({'opacity': 0.01}, 1000, function () {
+                        plot.empty();
+                        Bokeh.Plotting.show(p, plot);
+                        plot.animate({'opacity': 1}, 1000);
+                    });
+                }
             }
-
-
             if (msg['section'] === 'rel_trials') {
                 var rel_container = $("#rel_trials_container");
                 if (rel_container.is(':empty')) {
@@ -128,77 +211,64 @@ $(document).ready(function () {
                 } else {
                     var node = $.parseHTML(msg['data']);
                     var replacement = $(node).filter('#accordion-rel');
-                    $("#accordion-rel").html(replacement.html());
-                    calc_completeness();
+                    $("#accordion-rel").replaceWith(replacement);
+                    $("#accordion-rel").slideDown(2000);
                 }
                 var size_li = $("#accordion-rel").children("div.panel-default").length;
                 var x = 20;
                 $('#accordion-rel div.panel-default').hide();
-                $('#accordion-rel div.panel-default:lt('+x+')').show();
+                $('#accordion-rel div.panel-default:lt(' + x + ')').show();
                 $('#load_more_rel').click(function () {
-                    x= (x+5 <= size_li) ? x+5 : size_li;
-                    $('#accordion-rel div.panel-default:lt('+x+')').show();
-                    if (x === size_li) {$('#load_more_rel').hide();}
+                    x = (x + 5 <= size_li) ? x + 5 : size_li;
+                    $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+                    if (x === size_li) {
+                        $('#load_more_rel').hide();
+                    }
                 });
-                // $('#showLess').click(function () {
-                //     x=(x-5<0) ? 3 : x-5;
-                //     $('#myList li').not(':lt('+x+')').hide();
-                // });
-
                 $(".upvote").each(function () {
                     $(this).upvote({
                         callback: upvote_callback
                     });
                 });
-                console.log(msg['sort']);
                 $('.rel').removeClass('active');
                 $("#" + msg['sort'] + '.rel').addClass('active');
-
             }
-
             if (msg['section'] === 'incl_trials') {
-
                 var node = $.parseHTML(msg['data']);
                 var replacement = $(node).filter('#accordion-incl');
-                console.log(replacement);
-
                 var incl_container = $("#incl_trials_container");
                 if (incl_container.is(':empty') || $("#accordion-incl").length === 0 || replacement.length === 0) {
                     incl_container.html(msg['data']);
                     incl_container.slideDown(3000, function () {
-                        refresh_dashboard();
+                        // refresh_dashboard();
                     });
                 } else {
-                    var node = $.parseHTML(msg['data']);
                     $("#accordion-incl").replaceWith(replacement);
                 }
                 var size_li = $("#accordion-incl").children("div.panel-default").length;
-                var x=20;
-                if (size_li <= x) {$('#load_more_incl').hide();}
+                var x = 20;
+                if (size_li <= x) {
+                    $('#load_more_incl').hide();
+                }
                 $('#accordion-incl div.panel-default').hide();
-                $('#accordion-incl div.panel-default:lt('+x+')').show();
+                $('#accordion-incl div.panel-default:lt(' + x + ')').show();
                 $('#load_more_incl').click(function () {
-                    x= (x+5 <= size_li) ? x+5 : size_li;
-                    $('#accordion-incl div.panel-default:lt('+x+')').show();
-                     if (x === size_li) {$('#load_more_incl').hide();}
+                    x = (x + 5 <= size_li) ? x + 5 : size_li;
+                    $('#accordion-incl div.panel-default:lt(' + x + ')').show();
+                    if (x === size_li) {
+                        $('#load_more_incl').hide();
+                    }
                 });
                 $('.incl').removeClass('active');
-
                 $("#" + msg['sort'] + '.incl').addClass('active');
-
-
             }
-
             if (msg['section'] === 'no_results') {
                 $("#review-data-container").html(msg['data']);
                 $("#review-data-container").slideDown(1000);
                 $("#review-trials-container").empty();
                 $(".progress_div").slideUp(1000);
             }
-            console.log(msg);
-
         });
-
         if (document.URL.indexOf("browse") > -1) {
             $.ajax({
                 url: '/category_counts',
@@ -217,11 +287,9 @@ $(document).ready(function () {
                             $(this).remove();
                         }
                     })
-
                 }
             });
         }
-
         if (document.URL.indexOf("category") > -1) {
             var addr = document.URL.split('/');
             $.ajax({
@@ -245,8 +313,6 @@ $(document).ready(function () {
                 }
             });
         }
-
-
         socket.on('my_response', function (msg) {
             if (document.URL.indexOf("search") >= 0) {
                 $(document).ready(function () {
@@ -256,7 +322,7 @@ $(document).ready(function () {
                 });
             }
             var url = window.location.href;
-                if (window.location.pathname === '/') {
+            if (window.location.pathname === '/') {
                 $(document).ready(function () {
                     console.log('triggering new plot');
                     socket.emit('get_plot', {});
@@ -280,43 +346,32 @@ $(document).ready(function () {
                         success: function (data) {
                             data = JSON.parse(data)['data'];
                             $("#link_counts").html(
-                                '<a href="/browse">' + data['reviews'] + ' <small  style="color: #337ab7 !important;">systematic reviews</small></a><small> connected to</small>' + data['trials'] + ' <small>trials</small>'
+                                '<a href="/browse">' + data['reviews'] + ' <small  style="color: #337ab7 !important;">systematic reviews</small></a><small> connected to</small> ' + data['trials'] + ' <small>trials</small>'
                             );
                             $("#link_counts").fadeIn(1000);
-
                         }
                     });
-
-
                 });
             }
         });
-
         socket.on('search_update', function (msg) {
             console.log(msg);
-
             $("#progress_txt").text(msg['msg']);
             if (msg['msg'] === 'complete') {
                 $(".progress-div").attr('style', 'display:none;');
-
             }
         });
         socket.on('search_res', function (msg) {
-
             $("#progress_txt").text(msg['msg']);
             console.log(msg['msg']);
         });
-
-
         socket.on('test', function (msg) {
             console.log(msg['msg']);
         });
-
         socket.on('docsim_update', function (msg) {
             if (!$(".progress_basicbot").is(":visible")) {
                 $(".progress_basicbot").slideDown(1000);
             }
-
             $("#progress_txt_basicbot").text(msg['msg']);
             if (msg['msg'].indexOf('complete') > -1) {
                 socket.emit('refresh_trials', {
@@ -325,11 +380,9 @@ $(document).ready(function () {
                     'plot': true
                 });
                 $(".progress_basicbot").delay(1000).slideUp(2000);
-
             }
             console.log(msg['msg']);
         });
-
         socket.on('crossrefbot_update', function (msg) {
             if (!$(".progress_crossrefbot").is(":visible")) {
                 $(".progress_crossrefbot").slideDown(1000);
@@ -342,11 +395,9 @@ $(document).ready(function () {
                     'plot': true
                 });
                 $(".progress_crossrefbot").delay(1000).slideUp(2000);
-
             }
             console.log(msg['msg']);
         });
-
         socket.on('cochranebot_update', function (msg) {
             console.log(msg);
             if (!$(".progress_cochranebot").is(":visible")) {
@@ -365,14 +416,11 @@ $(document).ready(function () {
                         'type': 'rel',
                         'plot': true
                     });
-
                 }
                 $(".progress_cochranebot").delay(1000).slideUp(2000);
-
             }
             console.log(msg['msg']);
         });
-
         socket.on('basicbot2_update', function (msg) {
             if (!$(".progress_basicbot2").is(":visible")) {
                 $(".progress_basicbot2").slideDown(1000);
@@ -385,33 +433,26 @@ $(document).ready(function () {
                     'plot': true
                 });
                 $(".progress_basicbot2").delay(1000).slideUp(2000);
-
             }
             console.log(msg['msg']);
         });
-
         socket.on('new_page', function (msg) {
             // console.log(msg['data']);
             // todo replace this with something faster and more scalable
             $('.pg_content').html(msg['data']);
         });
-
         var getUrlParameter = function getUrlParameter(sParam) {
             var sPageURL = decodeURIComponent(window.location.search.substring(1)),
                 sURLVariables = sPageURL.split('&'),
                 sParameterName,
                 i;
-
             for (i = 0; i < sURLVariables.length; i++) {
                 sParameterName = sURLVariables[i].split('=');
-
                 if (sParameterName[0] === sParam) {
                     return sParameterName[1] === undefined ? true : sParameterName[1];
                 }
             }
         };
-
-
         var upvote_callback = function (data) {
             console.log('voted ajax');
             $.ajax({
@@ -431,21 +472,16 @@ $(document).ready(function () {
                     modal.modal();
                     if (data.upvoted) {
                         $("#" + data.id + '_vote > a.upvote').removeClass('upvote-on');
-
                     } else {
                         $("#" + data.id + '_vote > a.downvote').removeClass('downvote-on');
-
                     }
                 },
                 success: function (data1) {
                     var result = JSON.parse(data1);
                     $("#panel_" + data.id + " a.nicknames").html(result['voters']);
-
                 }
             });
         };
-
-
         $('div.upvote').upvote({
             callback: upvote_callback
         });
@@ -472,27 +508,21 @@ $(document).ready(function () {
                     $('#alert-place-' + category).html('<div class="alert alert-success "> <strong>Thank you! </strong>' + result['message'] + '</div>');
                     $('#alert-place-' + category).delay(3000).fadeOut("slow");
                 });
-
                 enable_elements();
-
             });
         }
-
 
         $(document).on("click", ".rel_incl", function (e) {
             var nct_id = e.target.id.substring(0, 11);
             move_rel_incl(nct_id);
         });
-
-
         $(document).on("click", ".save_review", function (e) {
             var val = true;
             var review_id = this.id;
-            if (typeof($(this).attr('active')) === 'undefined') {
+            if (typeof ($(this).attr('active')) === 'undefined') {
                 val = false;
             }
             console.log(val);
-
             $.ajax({
                 url: "/save_review",
                 type: 'post',
@@ -501,20 +531,16 @@ $(document).ready(function () {
                     review_id: review_id,
                     value: val
                 }),
-
                 error: function (data2) {
                     var modal = $("#myModal");
                     modal.find('.modal-body p').text(data2['responseText']);
                     modal.modal();
-
                 },
                 success: function (data) {
                     console.log(data);
                 }
-
             });
         });
-
 
         function move_incl_rel(nct_id) {
             disable_elements();
@@ -536,7 +562,7 @@ $(document).ready(function () {
                 } else {
                     panel.fadeOut("slow", function () {
                         panel.remove();
-                        refresh_dashboard();
+                        // refresh_dashboard();
                     });
                 }
                 var result = JSON.parse(data);
@@ -546,7 +572,6 @@ $(document).ready(function () {
                     'type': 'rel',
                     'plot': true
                 });
-
                 $('#alert-place-' + category).show();
                 $('#alert-place-' + category).html('<div class="alert alert-success "> <strong>Thank you! </strong>' + result['message'] + '</div>');
                 $('#alert-place-' + category).delay(3000).fadeOut("slow", function () {
@@ -554,7 +579,6 @@ $(document).ready(function () {
                 });
             });
         }
-
 
         function calc_completeness() {
             var rel_trials = 0;
@@ -564,7 +588,6 @@ $(document).ready(function () {
                 if (parseInt($(this).attr('value'))) {
                     rel_participants += parseInt($(this).attr('value'));
                 }
-
             });
             $("#num_rel_trials").text(rel_trials);
             $("#part_rel_trials").text(rel_participants);
@@ -576,8 +599,6 @@ $(document).ready(function () {
             });
             calc_completeness();
         });
-
-
         $(document).on("click", '.sort .btn', function (e) {
             var order = $(this).attr('id');
             var side = '';
@@ -589,16 +610,13 @@ $(document).ready(function () {
             console.log(side);
             console.log('click');
             console.log(order);
-
             socket.emit('refresh_trials', {
                 'review_id': getUrlParameter('searchterm'),
                 'type': side,
                 'sort': order,
                 'plot': false
             });
-
         });
-
         $(document).on("click", "#cmp_btn", function (e) {
             console.log('click calc!');
             $("#completeness_val").css('visibility', 'visible');
@@ -607,13 +625,10 @@ $(document).ready(function () {
             $(".form-check-input").css('visibility', 'visible');
             calc_completeness()
         });
-
-
         $(document).on("click", ".btn-incl-cmp", function (e) {
             var complete = e.target.value;
             update_included_complete(complete, function (data) {
                 $(".btn-incl-cmp").fadeOut(1000);
-
                 var result = JSON.parse(data);
                 $('#alert-place-incl').html('<div class="alert alert-success">  <strong>' + result['message'] + '</strong></div>');
                 $('#alert-place-incl').delay(3000).fadeOut("slow");
@@ -623,32 +638,25 @@ $(document).ready(function () {
                     'type': 'incl',
                     'plot': false
                 });
-
                 if (complete === 'True') {
                     socket.emit('trigger_basicbot2', {
                         'review_id': getUrlParameter('searchterm')
                     });
-
                     $('.rel_incl').css('visibility', 'hidden');
                     $(".btn-incl-cmp").val('False');
                     $(".btn-incl-cmp").html('This list is incomplete');
-                }
-                else {
+                } else {
                     console.log('complete is not true');
-
                     $('.rel_incl').css('visibility', 'visible');
                     $(".btn-incl-cmp").val('True');
                     $(".btn-incl-cmp").html('This list is complete');
                 }
                 $(".btn-incl-cmp").fadeIn(1000);
-
             });
         });
-
         $(document).on("change", ".form-check-input:checkbox", function (e) {
             calc_completeness();
         });
-
 
         function disable_elements() {
             console.log('disabling');
@@ -670,7 +678,6 @@ $(document).ready(function () {
             $(".rel_incl").attr('disabled', false);
         }
 
-
         $(document).on("click", ".nct-submit", function (e) {
             console.log('clicked +');
             var re_nct = /(NCT|nct)[0-9]{8}/;
@@ -689,7 +696,6 @@ $(document).ready(function () {
                         $('#alert-place-' + category).delay(3000).fadeOut("slow", function () {
                             enable_elements();
                         });
-
                         $('#accordion-' + category).prepend('');
                         // reload_trials(category);
                         socket.emit('refresh_trials', {
@@ -702,20 +708,20 @@ $(document).ready(function () {
                                 'review_id': getUrlParameter('searchterm')
                             });
                         }
-
                     } else {
-                        $("#panel_" + nct_id)[0].scrollIntoView({behaviour: "smooth"});
+                        var to_move =  $("#panel_" + nct_id);
+                        to_move.parent().prepend(to_move);
+                        if(to_move.is(":hidden")) {to_move.show();}
+                        to_move[0].scrollIntoView({behaviour: "smooth"});
                         $("#panel_" + nct_id + "> .panel-heading").effect("highlight", {}, 3000);
                         if (result['move']) {
                             $('#alert-place-' + category).html('<div class="alert alert-info "> <strong>Uh oh! </strong>' + result['message'] + '   <a class="btn btn-xs btn-primary pull-right move-trial">Move to this list</a></div>');
-                        }
-                        else {
+                        } else {
                             $('#alert-place-' + category).html('<div class="alert alert-info "> <strong>Uh oh! </strong>' + result['message'] + '  </div>');
                         }
                         $('#alert-place-' + category).fadeIn(1000);
                         $('#alert-place-' + category).delay(3000).fadeOut(1000, function () {
                             enable_elements();
-
                         });
                         $(document).on("click", ".move-trial", function (e) {
                             if (category === 'incl') {
@@ -728,24 +734,19 @@ $(document).ready(function () {
                         });
                     }
                 });
-
             } else {
                 $('#alert-place-' + category).html('<div class="alert alert-warning "><strong>Uh oh!</strong> Please enter a valid ClinicalTrials.gov registry ID</div>');
                 $('#alert-place-' + category).fadeIn(400, function () {
                     $('#alert-place-' + category).delay(2000).fadeOut("slow", function () {
                         enable_elements();
-
                     });
-
                 });
             }
         });
-
         $(document).on("click", ".row .dismiss", function (e) {
             var nct_id = e.target.id.substring(8);
             move_incl_rel(nct_id)
         });
-
 
         function update_included_complete(complete, callback) {
             $.ajax({
@@ -757,19 +758,15 @@ $(document).ready(function () {
                     value: complete
                 }),
                 error: function (data2) {
-
                     var modal = $("#myModal");
                     modal.find('.modal-body p').text(data2['responseText']);
                     modal.modal();
-
                 },
                 success: function (data) {
                     callback(data);
                 }
-
             });
         }
-
 
         function included_relevant(nct_id, callback) {
             $.ajax({
@@ -787,7 +784,6 @@ $(document).ready(function () {
                     var modal = $("#myModal");
                     modal.find('.modal-body p').text(data2['responseText']);
                     modal.modal();
-
                 }
             });
         }
@@ -808,11 +804,9 @@ $(document).ready(function () {
                     var modal = $("#myModal");
                     modal.find('.modal-body p').text(data2['responseText']);
                     modal.modal();
-
                 }
             });
         }
-
 
         function submitTrial(id, relationship, callback) {
             $.ajax({
@@ -831,7 +825,6 @@ $(document).ready(function () {
                     var modal = $("#myModal");
                     modal.find('.modal-body p').text(data2['responseText']);
                     modal.modal();
-
                 }
             });
         }

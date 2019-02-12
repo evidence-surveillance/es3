@@ -9,6 +9,10 @@ import os
 import config
 import dblib
 import csv
+from dateutil.parser import parse
+import math
+import random
+import numpy
 
 res_path = config.RESOURCES_PATH
 
@@ -81,6 +85,71 @@ def requests_retry_session(
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     return session
+
+
+def sample_floats(low, high, k=1):
+    """ Return a k-length list of unique random floats
+        in the range of low <= x <= high
+    """
+    result = []
+    seen = set()
+    for i in range(k):
+        x = random.uniform(low, high)
+        while x in seen:
+            x = random.uniform(low, high)
+        seen.add(x)
+        result.append(x)
+    return result
+
+
+def get_sorted(args, list):
+    return numpy.array(list)[args].tolist()
+
+
+def trials_to_plotdata(trials):
+    dates = []
+    colours = []
+    normalised_enrollment = []
+    verified = []
+    alpha_vals = []
+    ids = []
+    enrollment = []
+    max_enrollment = max(x['enrollment'] for x in trials if x['completion_date'] and x['enrollment'] and (
+                x['sum'] > 1 or x['verified'] or x['relationship'] == 'included'))
+    for x in trials:
+        if x['completion_date'] and x['enrollment'] and (
+                x['sum'] > 1 or x['verified'] or x['relationship'] == 'included'):
+            date = parse(x['completion_date'], fuzzy=True)
+            dates.append(date.strftime('%Y-%m-%d'))
+            if x['relationship'] == 'included':
+                colours.append([125, 0, 255])
+                alpha_vals.append(0.6)
+            elif x['overall_status'] in ('Completed', 'Available'):
+                colours.append([0, 255, 0])
+                alpha_vals.append(0.6)
+            elif x['overall_status'] in ('Suspended', 'Terminated', 'Withheld', 'Withdrawn'):
+                colours.append([255, 0, 0])
+                alpha_vals.append(0.4)
+            elif x['overall_status'] in ('Unknown status', 'No longer available', 'Temporarily not available'):
+                colours.append([240, 173, 78])
+                alpha_vals.append(0.4)
+            elif x['overall_status'] in (
+                    'Not yet recruiting', 'Approved for marketing', 'Enrolling by invitation', 'Active, not recruiting',
+                    'Enrolling',
+                    'Recruiting'):
+                colours.append([143, 248, 255])
+                alpha_vals.append(0.4)
+            normalised_enrollment.append(math.sqrt(float(x['enrollment']) / float(max_enrollment)) * 1999999999999)
+            enrollment.append(x['enrollment'])
+            verified.append(x['verified'])
+            ids.append(x['nct_id'])
+    sorted_enrollment = numpy.argsort(normalised_enrollment)[::-1]
+    res = {'dates': get_sorted(sorted_enrollment, dates), 'colours': get_sorted(sorted_enrollment, colours),
+           'enrollment': get_sorted(sorted_enrollment, normalised_enrollment),
+           'verified': get_sorted(sorted_enrollment, verified),
+           'y_vals': sample_floats(2000000000000, 6000000000000, len(dates)), 'alpha': get_sorted(sorted_enrollment,alpha_vals),
+           'titles':get_sorted(sorted_enrollment,ids), 'real_enrollment':get_sorted(sorted_enrollment,enrollment)}
+    return res
 
 
 def retry_get(base_url, params):
@@ -165,18 +234,18 @@ def most_recent_matfac_nctids():
     latest_file = max(list_of_files, key=os.path.getmtime)
     return latest_file
 
+
 def export_rt_links():
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor()
     cur.execute("SELECT review_id, nct_id, upvotes-downvotes, relationship, verified from review_rtrial;")
     trials = cur.fetchall()
-    with open('complete_review_matrix.csv','w') as complete, open('review_trial_matrix.csv','w') as all:
+    with open('complete_review_matrix.csv', 'w') as complete, open('review_trial_matrix.csv', 'w') as all:
         writer1 = csv.writer(complete)
         writer2 = csv.writer(all)
-        writer1.writerow(['review_id','nct_id','net_votes','relationship'])
-        writer2.writerow(['review_id','nct_id','net_votes','relationship'])
+        writer1.writerow(['review_id', 'nct_id', 'net_votes', 'relationship'])
+        writer2.writerow(['review_id', 'nct_id', 'net_votes', 'relationship'])
         for row in trials:
             writer2.writerow(list(row)[:4])
             if row[4]:
                 writer1.writerow(list(row)[:4])
-

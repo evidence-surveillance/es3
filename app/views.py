@@ -84,8 +84,13 @@ def refresh_trials(json):
               'data': render_template('rel_trials.html' if type == 'rel' else 'incl_trials.html',
                                       reg_trials=trials['reg_trials'],
                                       locked=locked)}, room=request.sid)
-        if plot_bool and not plot.check_plottrials_running(request.sid):
-            plot.plot_trials.delay(relevant, verified=verified, page='reviewdetail', sess_id=request.sid)
+        if plot_bool:
+            formatted = utils.trials_to_plotdata(trials['reg_trials'])
+            socketio.emit('page_content',
+                          {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
+                           'review_id': id
+                           }, room=request.sid)
+
     elif type == 'incl' and not verified['ids']:
         emit('page_content',
              {'section': 'incl_trials', 'sort': sort,
@@ -212,7 +217,11 @@ def search(json):
         verified = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included']
         emit('search_update', {'msg': 'Generating cool plots...'}, room=request.sid)
         eventlet.sleep(0)
-        plot.plot_trials.delay(relevant, verified=verified, page='reviewdetail', sess_id=request.sid)
+        formatted = utils.trials_to_plotdata(trials['reg_trials'])
+        socketio.emit('page_content',
+                      {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
+                       'review_id': review[0]
+                       }, room=request.sid)
         emit('page_content',
              {'section': 'rel_trials', 'data': render_template('rel_trials.html', reg_trials=trials['reg_trials'],
                                                                locked=review['included_complete'])}, room=request.sid)
