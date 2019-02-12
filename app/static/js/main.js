@@ -13,31 +13,50 @@ $(document).ready(function () {
             }
         }
 
-
-        function refresh_dashboard() {
-            var num_i = 0;
-            var interval = setInterval(function () {
-                var target = $("#incl_trials_container .panel").length;
-                $('#num_incl_trials').text(num_i);
-                if (num_i >= target) clearInterval(interval);
-                num_i++;
-            }, 30);
-            var incl_part = 0;
-            $(".incl-enrol").each(function () {
-                if (parseInt($(this).attr('title'))) {
-                    incl_part += parseInt($(this).attr('title'));
+        function gen_plot(msg) {
+            var title = msg['title'];
+            var id = msg['review_id'];
+            var title_div = $("#plot_title");
+            var data = msg['data'];
+            var plt = Bokeh.Plotting;
+            var yy = data['y'];
+            var xx = data['x'];
+            var colours = data['colours'];
+            var ydr = new Bokeh.Range1d({start: -70.038440855407714, end: 70.644477995300306});
+            var xdr = new Bokeh.Range1d({start: -69.551894338989271, end: 64.381507070922851});
+            var source = new Bokeh.ColumnDataSource({
+                data: {
+                    x: xx,
+                    y: yy,
                 }
             });
-            var num_p = 0;
-            var interval2 = setInterval(function () {
-                $('#part_incl_trials').text(num_p);
-                if (num_p >= incl_part) {
-                    clearInterval(interval2);
-                    $('#part_incl_trials').text(incl_part);
-                }
-                num_p += parseInt((incl_part / 66).toFixed());
-            }, 30);
-
+            var tools = "pan,crosshair,wheel_zoom,reset,save";
+            var image = new Bokeh.ImageURL({
+                url: data['img'],
+                x: xdr.start - 2.0, y: ydr.end, w: ydr.end - ydr.start - 2.7,
+                h: (xdr.end - xdr.start) + 6.7, anchor: "top_left"
+            });
+            var p = plt.figure({
+                plot_width: 550,
+                plot_height: 550,
+                x_range: xdr,
+                y_range: ydr
+            });
+            p.add_glyph(image);
+            var circles = p.circle({field: "x"}, {field: "y"}, {
+                source: source,
+                radius: 0.2,
+                fill_color: colours,
+                line_color: null,
+                fill_alpha: 0.8
+            });
+            p.yaxis.visible = false;
+            p.xaxis.visible = false;
+            p.xgrid.visible = false;
+            p.ygrid.visible = false;
+            p.border_fill_color = null;
+            p.outline_line_color = null;
+            return p
         }
 
         // function refresh_dashboard() {
@@ -324,20 +343,50 @@ $(document).ready(function () {
             var url = window.location.href;
             if (window.location.pathname === '/') {
                 $(document).ready(function () {
+                    var title_div = $("#plot_title");
+                    var plot = $("#plot");
                     console.log('triggering new plot');
-                    socket.emit('get_plot', {});
-                    var plot_interval = window.setInterval(function () {
-                        socket.emit('get_plot', {});
-                    }, 10000);
+                    getPlot(function (msg) {
+                        msg = JSON.parse(msg)['data'];
+                        var p = gen_plot(msg);
+                        Bokeh.Plotting.show(p, plot);
+                        title_div.html(msg['title']);
+                        title_div.attr('href', '/search?searchterm=' + msg['review_id']);
+                        title_div.fadeIn();
+                        plot.fadeIn();
+                        $("#refresh_plot").fadeIn();
+                    });
+                    // var plot_interval = window.setInterval(function () {
+                    //     plot.fadeOut();
+                    //     title_div.fadeOut();
+                    //     $("#refresh_plot").fadeOut();
+                    //     getPlot(function (msg) {
+                    //         msg = JSON.parse(msg)['data'];
+                    //         var p = gen_plot(msg);
+                    //         plot.empty();
+                    //         Bokeh.Plotting.show(p, plot);
+                    //         title_div.html(msg['title']);
+                    //         title_div.attr('href', '/search?searchterm=' + msg['review_id']);
+                    //         title_div.fadeIn();
+                    //         plot.fadeIn();
+                    //         $("#refresh_plot").fadeIn();
+                    //     });
+                    // }, 10000);
                     $(document).on("click", "#refresh_plot", function (e) {
-                        window.clearInterval(plot_interval);
-                        $("#plot").fadeOut();
-                        $("#plot_title").fadeOut();
+                        plot.fadeOut();
+                        title_div.fadeOut();
                         $("#refresh_plot").fadeOut();
-                        socket.emit('get_plot', {});
-                        plot_interval = window.setInterval(function () {
-                            socket.emit('get_plot', {});
-                        }, 10000);
+                        getPlot(function (msg) {
+                            msg = JSON.parse(msg)['data'];
+                            var p = gen_plot(msg);
+                            plot.empty();
+                            Bokeh.Plotting.show(p, plot);
+                            title_div.html(msg['title']);
+                            title_div.attr('href', '/search?searchterm=' + msg['review_id']);
+                            title_div.fadeIn();
+                            plot.fadeIn();
+                            $("#refresh_plot").fadeIn();
+                        });
                     });
                     $.ajax({
                         url: "/unique_reviews_trials",
@@ -829,7 +878,16 @@ $(document).ready(function () {
             });
         }
 
-
+        function getPlot(callback) {
+            $.ajax({
+                url: "/plot",
+                type: 'post',
+                contentType: 'application/json;charset=UTF-8',
+                success: function (data) {
+                    callback(data);
+                }
+            });
+        }
     }
 )
 ;

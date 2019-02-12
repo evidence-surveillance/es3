@@ -50,18 +50,18 @@ def trigger_basicbot2(json):
         bot.basicbot2.delay(review_id=review, sess_id=request.sid)
 
 
-@socketio.on('get_plot')
-def get_plot(data):
+@app.route('/plot',methods=['POST'])
+def get_plot():
     """ generate new random TSNE plot for homepage """
-    if not plot.check_plottrials_running(request.sid):
-        ids = crud.get_locked()
-        test_id = random.choice(ids)
-        review_data = crud.review_medtadata_db(test_id)
-        trials = crud.get_review_trials_fast(test_id, usr=current_user if current_user.is_authenticated else None)
-        relevant = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant']
-        verified = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included']
-        plot.plot_trials.delay(relevant, verified=verified, page='home', title=review_data['title'], review_id=test_id,
-                               sess_id=request.sid)
+    ids = crud.get_locked()
+    test_id = random.choice(ids)
+    review_data = crud.review_medtadata_db(test_id)
+    trials = crud.get_review_trials_fast(test_id, usr=current_user if current_user.is_authenticated else None)
+    return json.dumps({'success': True, 'data':  {'section': 'plot', 'data': plot.get_tsne_data(trials['reg_trials']), 'page': 'home',
+                   'review_id': test_id,
+                   'title': review_data['title']}
+                       }), 200, {
+               'ContentType': 'application/json'}
 
 
 @socketio.on('refresh_trials')
@@ -405,6 +405,7 @@ def incl_rel():
     crud.change_relationship(link_id, 'relevant')
     return json.dumps({'success': True, 'message': 'Trial moved successfully'}), 200, {
         'ContentType': 'application/json'}
+
 
 
 @app.route('/download/<detail>', methods=['GET'])
