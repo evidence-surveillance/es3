@@ -283,7 +283,7 @@ def check_basicbot2_running(review_id):
     i = inspect()
     active_tasks = i.active()
     if active_tasks:
-        for task in active_tasks['worker@ip-172-31-14-248.ap-southeast-2.compute.internal']:
+        for task in active_tasks[config.CELERY_WORKER_ADDR]:
             if task['name'] == 'bot.basicbot2':
                 if 'review_id' in task['kwargs'] and str(review_id) in task['kwargs']:
                     return True
