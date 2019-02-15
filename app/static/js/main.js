@@ -1,4 +1,6 @@
 $(document).ready(function () {
+
+        var socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);
         var socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);
 
         function setPubDate() {
@@ -222,6 +224,20 @@ $(document).ready(function () {
                     });
                 }
             }
+
+            if (msg['section'] === 'recommended_trials') {
+                var rel_container = $("#rel_trials_container");
+                if (rel_container.is(':empty')) {
+                    rel_container.html(msg['data']);
+                    rel_container.slideDown(2000);
+                    $("#incl_trials_container").slideDown(2000);
+                } else {
+                    var node = $.parseHTML(msg['data']);
+                    var replacement = $(node).filter('#accordion-rel');
+                    $("#accordion-rel").html(replacement.html());
+                }
+
+            }
             if (msg['section'] === 'rel_trials') {
                 var rel_container = $("#rel_trials_container");
                 if (rel_container.is(':empty')) {
@@ -238,6 +254,9 @@ $(document).ready(function () {
                 $('#accordion-rel div.panel-default').hide();
                 $('#accordion-rel div.panel-default:lt(' + x + ')').show();
                 $('#load_more_rel').click(function () {
+                    x = (x + 5 <= size_li) ? x + 5 : size_li;
+                    $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+                    if (x === size_li) {$('#load_more_rel').hide();}
                     x = (x + 5 <= size_li) ? x + 5 : size_li;
                     $('#accordion-rel div.panel-default:lt(' + x + ')').show();
                     if (x === size_li) {
@@ -274,9 +293,7 @@ $(document).ready(function () {
                 $('#load_more_incl').click(function () {
                     x = (x + 5 <= size_li) ? x + 5 : size_li;
                     $('#accordion-incl div.panel-default:lt(' + x + ')').show();
-                    if (x === size_li) {
-                        $('#load_more_incl').hide();
-                    }
+                     if (x === size_li) {$('#load_more_incl').hide();}
                 });
                 $('.incl').removeClass('active');
                 $("#" + msg['sort'] + '.incl').addClass('active');
@@ -399,6 +416,16 @@ $(document).ready(function () {
                             );
                             $("#link_counts").fadeIn(1000);
                         }
+                    });
+
+
+                });
+            }
+            if (window.location.pathname === '/blank') {
+                $(document).ready(function () {
+                    $(document).on("click", "#submit_text", function (e) {
+                        var text = $("#free_text").val();
+                        socket.emit('freetext_trials', {'text': text});
                     });
                 });
             }
@@ -565,6 +592,15 @@ $(document).ready(function () {
             var nct_id = e.target.id.substring(0, 11);
             move_rel_incl(nct_id);
         });
+
+        $(document).on("click", ".rec_rel_incl", function (e) {
+            var nct_id = e.target.id.substring(0, 11);
+            var panel = $('#panel_' + nct_id);
+            $(panel).detach().appendTo('#accordion-incl');
+            $('#'+nct_id+'_movincl').css('visibility', 'hidden');
+        });
+
+
         $(document).on("click", ".save_review", function (e) {
             var val = true;
             var review_id = this.id;
