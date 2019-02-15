@@ -1,6 +1,4 @@
 $(document).ready(function () {
-
-        var socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);
         var socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);
 
         function setPubDate() {
@@ -256,9 +254,6 @@ $(document).ready(function () {
                 $('#load_more_rel').click(function () {
                     x = (x + 5 <= size_li) ? x + 5 : size_li;
                     $('#accordion-rel div.panel-default:lt(' + x + ')').show();
-                    if (x === size_li) {$('#load_more_rel').hide();}
-                    x = (x + 5 <= size_li) ? x + 5 : size_li;
-                    $('#accordion-rel div.panel-default:lt(' + x + ')').show();
                     if (x === size_li) {
                         $('#load_more_rel').hide();
                     }
@@ -293,7 +288,9 @@ $(document).ready(function () {
                 $('#load_more_incl').click(function () {
                     x = (x + 5 <= size_li) ? x + 5 : size_li;
                     $('#accordion-incl div.panel-default:lt(' + x + ')').show();
-                     if (x === size_li) {$('#load_more_incl').hide();}
+                    if (x === size_li) {
+                        $('#load_more_incl').hide();
+                    }
                 });
                 $('.incl').removeClass('active');
                 $("#" + msg['sort'] + '.incl').addClass('active');
