@@ -199,7 +199,6 @@ $(document).ready(function () {
                         'var to_move =  $("#panel_" + nct_id);\n' +
                         'to_move.parent().prepend(to_move);' +
                         'if(to_move.is(":hidden")) {to_move.show();} ' +
-                        '$("#panel_" + nct_id)[0].scrollIntoView({behaviour: "smooth"});\n' +
                         '                        $("#panel_" + nct_id + "> .panel-heading").effect("highlight", {}, 3000);'
                 });
                 var tap = new Bokeh.TapTool({callback: cb});
@@ -761,7 +760,6 @@ $(document).ready(function () {
                         var to_move =  $("#panel_" + nct_id);
                         to_move.parent().prepend(to_move);
                         if(to_move.is(":hidden")) {to_move.show();}
-                        to_move[0].scrollIntoView({behaviour: "smooth"});
                         $("#panel_" + nct_id + "> .panel-heading").effect("highlight", {}, 3000);
                         if (result['move']) {
                             $('#alert-place-' + category).html('<div class="alert alert-info "> <strong>Uh oh! </strong>' + result['message'] + '   <a class="btn btn-xs btn-primary pull-right move-trial">Move to this list</a></div>');
