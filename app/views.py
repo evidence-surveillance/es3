@@ -47,17 +47,18 @@ def trigger_basicbot2(json):
         bot.basicbot2.delay(review_id=review, sess_id=request.sid)
 
 
-@app.route('/plot',methods=['POST'])
+@app.route('/plot', methods=['POST'])
 def get_plot():
     """ generate new random TSNE plot for homepage """
     ids = crud.get_locked()
     test_id = random.choice(ids)
     review_data = crud.review_medtadata_db(test_id)
     trials = crud.get_review_trials_fast(test_id, usr=current_user if current_user.is_authenticated else None)
-    return json.dumps({'success': True, 'data':  {'section': 'plot', 'data': plot.get_tsne_data(trials['reg_trials']), 'page': 'home',
-                   'review_id': test_id,
-                   'title': review_data['title']}
-                       }), 200, {
+    return json.dumps(
+        {'success': True, 'data': {'section': 'plot', 'data': plot.get_tsne_data(trials['reg_trials']), 'page': 'home',
+                                   'review_id': test_id,
+                                   'title': review_data['title']}
+         }), 200, {
                'ContentType': 'application/json'}
 
 
@@ -66,11 +67,24 @@ def freetext_trials(data):
     freetext = data['text']
     trial_ids = bot.docsim_freetext(freetext)
     trials = crud.get_trials_by_id(trial_ids)
-    print trial_ids
+    plot_trials=[]
+    for t in trials:
+        t=dict(t)
+        t['sum'] = 2
+        t['verified'] = False
+        t['relationship'] = 'relevant'
+        plot_trials.append(t)
+
+
+    formatted = utils.trials_to_plotdata(plot_trials[:20])
+    socketio.emit('page_content',
+                  {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
+                   }, room=request.sid)
+
     emit('page_content',
          {'section': 'recommended_trials', 'data': render_template('recommended_trials.html', reg_trials=trials)})
-    plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
-                           sess_id=request.sid)
+    # plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
+    #                        sess_id=request.sid)
 
 
 @socketio.on('refresh_trials')

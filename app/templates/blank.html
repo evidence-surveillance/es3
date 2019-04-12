@@ -36,30 +36,31 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-lg-6 col-md-4 col-sm-4">
-
+                         <div class="col-lg-12 col-md-12 col-sm-12" >
                             <div class="form-group">
                                 <label for="comment"></label>
-                                <textarea class="form-control" rows="20" id="free_text"
+                                <textarea class="form-control" rows="4" id="free_text"
                                           placeholder="Submit some free text here and we'll recommend some trials that might be useful"></textarea><br>
                                 <button type="button" id="submit_text" class="btn  btn-primary btn-block "
                                         value="False">Submit
                                 </button>
                             </div>
+                         </div>
 
-
-                        </div>
-
-                        {#    <div class="col-md-7 text-center" id="plot" style="display: none;">#}
-                        <div class="col-lg-6 col-md-8 col-sm-8 text-center" id="plot"
-                             style="display: none; height: 550px;">
-                            {{ plot|safe }}
-                        </div>
 
                     </div>
+
                     <br>
 
                 </div>
+            </div>
+            <div class="row">
+
+                        <div class="col-lg-12 col-md-12 col-sm-12 text-center" id="plot"
+                             style="height: 30vh; width: 80vw;">
+                            {{ plot|safe }}
+                        </div>
+
             </div>
             <div class="row">
                 <div class="col-lg-12 col-md-12">

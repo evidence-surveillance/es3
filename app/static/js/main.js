@@ -14,9 +14,6 @@ $(document).ready(function () {
         }
 
         function gen_plot(msg) {
-            var title = msg['title'];
-            var id = msg['review_id'];
-            var title_div = $("#plot_title");
             var data = msg['data'];
             var plt = Bokeh.Plotting;
             var yy = data['y'];
@@ -30,7 +27,6 @@ $(document).ready(function () {
                     y: yy,
                 }
             });
-            var tools = "pan,crosshair,wheel_zoom,reset,save";
             var image = new Bokeh.ImageURL({
                 url: data['img'],
                 x: xdr.start - 2.0, y: ydr.end, w: ydr.end - ydr.start - 2.7,
@@ -116,6 +112,9 @@ $(document).ready(function () {
                 var alpha_vals = data['alpha'];
                 var radii = data['enrollment'];
                 var pub_date = Date.parse($('#pub_date').html());
+                if(isNaN(pub_date)) {
+                    pub_date = Date.now();
+                }
                 var ydr = new Bokeh.Range1d({start: 0, end: 8000000000000});
                 var year_padding = 3.1556952 * (10 ** 10);
                 var xdr = new Bokeh.Range1d({
