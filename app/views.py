@@ -65,24 +65,29 @@ def get_plot():
 @socketio.on('freetext_trials')
 def freetext_trials(data):
     freetext = data['text']
+    emit('blank_update', {'msg': 'calculating similar trials'}, room=request.sid)
     trial_ids = bot.docsim_freetext(freetext)
+    emit('blank_update', {'msg': 'rendering similar trials'}, room=request.sid)
+    related = crud.related_reviews_from_trials(trial_ids)
     trials = crud.get_trials_by_id(trial_ids)
-    plot_trials=[]
+    plot_trials = []
     for t in trials:
-        t=dict(t)
+        t = dict(t)
         t['sum'] = 2
         t['verified'] = False
         t['relationship'] = 'relevant'
         plot_trials.append(t)
-
-
+    emit('blank_update', {'msg': 'predictions complete'}, room=request.sid)
     formatted = utils.trials_to_plotdata(plot_trials[:20])
     socketio.emit('page_content',
-                  {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
+                  {'section': 'plot', 'data': formatted, 'page': 'blank',
                    }, room=request.sid)
 
     emit('page_content',
-         {'section': 'recommended_trials', 'data': render_template('recommended_trials.html', reg_trials=trials)})
+         {'section': 'recommended_trials', 'data': render_template('recommended_trials.html', reg_trials=trials),
+          'related_reviews': render_template('related_reviews.html',
+                                             related_reviews=related)}, room=request.sid)
+
     # plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
     #                        sess_id=request.sid)
 
