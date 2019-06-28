@@ -79,6 +79,14 @@ $(document).ready(function () {
         //         num_p += parseInt((incl_part / 66).toFixed());
         //     }, 30);
         // }
+        socket.on('blank_update', function (msg) {
+            $("#progress_txt").text(msg['msg']);
+            if (msg['msg'].indexOf('complete') > -1) {
+                $(".progress_div").slideUp(1000);
+            } else {
+                $(".progress_div").slideDown(1000);
+            }
+        });
         socket.on('page_content', function (msg) {
             if (msg['section'] === 'review_data') {
                 $("#review-data-container").html(msg['data']);
@@ -112,7 +120,7 @@ $(document).ready(function () {
                 var alpha_vals = data['alpha'];
                 var radii = data['enrollment'];
                 var pub_date = Date.parse($('#pub_date').html());
-                if(isNaN(pub_date)) {
+                if (isNaN(pub_date)) {
                     pub_date = Date.now();
                 }
                 var ydr = new Bokeh.Range1d({start: 0, end: 8000000000000});
@@ -204,8 +212,10 @@ $(document).ready(function () {
                 var tap = new Bokeh.TapTool({callback: cb});
                 p.add_tools(tap);
                 p.add_tools(hover);
-                p.add_layout(pubdate);
-                p.add_layout(label);
+                if (msg['page'] === 'reviewdetail') {
+                    p.add_layout(pubdate);
+                    p.add_layout(label);
+                }
                 p.yaxis.visible = false;
                 p.xgrid.visible = false;
                 p.ygrid.visible = false;
@@ -221,7 +231,6 @@ $(document).ready(function () {
                     });
                 }
             }
-
             if (msg['section'] === 'recommended_trials') {
                 var rel_container = $("#rel_trials_container");
                 if (rel_container.is(':empty')) {
@@ -233,7 +242,8 @@ $(document).ready(function () {
                     var replacement = $(node).filter('#accordion-rel');
                     $("#accordion-rel").html(replacement.html());
                 }
-
+                $("#related-reviews").html(msg['related_reviews']);
+                $("#related-reviews").slideDown(1000);
             }
             if (msg['section'] === 'rel_trials') {
                 var rel_container = $("#rel_trials_container");
@@ -413,14 +423,15 @@ $(document).ready(function () {
                             $("#link_counts").fadeIn(1000);
                         }
                     });
-
-
                 });
             }
             if (window.location.pathname === '/blank') {
                 $(document).ready(function () {
                     $(document).on("click", "#submit_text", function (e) {
                         var text = $("#free_text").val();
+                        if (text.length === 0) {
+                            return;
+                        }
                         socket.emit('freetext_trials', {'text': text});
                     });
                 });
@@ -588,15 +599,12 @@ $(document).ready(function () {
             var nct_id = e.target.id.substring(0, 11);
             move_rel_incl(nct_id);
         });
-
         $(document).on("click", ".rec_rel_incl", function (e) {
             var nct_id = e.target.id.substring(0, 11);
             var panel = $('#panel_' + nct_id);
             $(panel).detach().appendTo('#accordion-incl');
-            $('#'+nct_id+'_movincl').css('visibility', 'hidden');
+            $('#' + nct_id + '_movincl').css('visibility', 'hidden');
         });
-
-
         $(document).on("click", ".save_review", function (e) {
             var val = true;
             var review_id = this.id;
@@ -790,9 +798,11 @@ $(document).ready(function () {
                             });
                         }
                     } else {
-                        var to_move =  $("#panel_" + nct_id);
+                        var to_move = $("#panel_" + nct_id);
                         to_move.parent().prepend(to_move);
-                        if(to_move.is(":hidden")) {to_move.show();}
+                        if (to_move.is(":hidden")) {
+                            to_move.show();
+                        }
                         to_move[0].scrollIntoView({behaviour: "smooth"});
                         $("#panel_" + nct_id + "> .panel-heading").effect("highlight", {}, 3000);
                         if (result['move']) {
