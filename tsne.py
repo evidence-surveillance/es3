@@ -57,7 +57,7 @@ def _new_tsne_img(matrix, date):
     plt.scatter(matrix[:, 0], matrix[:, 1],
                 c='0.85',edgecolors='none', alpha=0.8,
                 marker='.', s=1)
-    plt.savefig('app/static/images/tsne'+date+'_sml.png', format='png', dpi=400)
+    plt.savefig('app/static/images/tsne'+date+'_sml.png', format='png', dpi=1000)
 
 
 def _truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
