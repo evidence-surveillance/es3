@@ -18,9 +18,9 @@ Cython==0.27.3
 decorator==4.2.1
 dominate==2.3.1
 enum34==1.1.6
-eutils==0.4.1.dev7+g9cd8f30
+eutils==0.4.1
 eventlet==0.22.1
-flask ~> 0.12.3
+flask==0.12.3
 Flask-Bootstrap==3.3.7.1
 Flask-Cache==0.13.1
 Flask-Login==0.4.0
