@@ -556,6 +556,20 @@ def related_reviews(review_id):
     return result
 
 
+
+def related_reviews_from_trials(nct_ids):
+    """  get a list of review PMIDs that share trials with the specified review PMID, ordered by # of shared trials  """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute(
+        "SELECT r.review_id, sr.title, count(r.*) FROM review_rtrial r INNER JOIN systematic_reviews sr ON r.review_id = "
+        "sr.review_id WHERE r.relationship = 'included' AND r.nct_id IN %s GROUP BY r.review_id, sr.title "
+        " ORDER BY count(*) DESC LIMIT 10;", (tuple(nct_ids),))
+    result = cur.fetchall()
+    conn.close()
+    return result
+
+
 def review_medtadata_db(pmid):
     """ get metadata for review with specified PMID  """
     conn = dblib.create_con(VERBOSE=True)
@@ -614,6 +628,19 @@ def get_review_trials_fast(review_id, order='total_votes', usr=None):
             trial['voters'] = ""
         reg_trials[i] = trial.copy()
     return {'reg_trials': reg_trials}
+
+def get_trials_by_id(nct_list):
+    """
+    get the details of all trials specified in nct_list
+    :param nct_list:
+    :return: list of trial dicts
+    """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute("SELECT tr.nct_id, tr.brief_title, tr.overall_status, tr.enrollment, tr.completion_date,json_agg(distinct t.trialpub_id::TEXT) as trialpubs FROM tregistry_entries tr left join trialpubs_rtrial t on (tr.nct_id = t.nct_id and tr.nct_id in %s ) where tr.nct_id in %s  GROUP BY tr.nct_id, tr.brief_title, tr.overall_status, tr.enrollment, tr.completion_date;",(tuple(nct_list),tuple(nct_list)))
+    trials = cur.fetchall()
+    conn.close()
+    return trials
 
 
 def get_trial_xml(nct_id):

@@ -65,7 +65,7 @@ python-dateutil==2.6.1
 python-engineio==2.0.4
 python-socketio==1.9.0
 pytz==2018.3
-PyYAML==3.12
+pyyaml>=4.2b1
 requests>=2.20.0
 requests-toolbelt==0.8.0
 scikit-learn==0.19.1
@@ -84,7 +84,7 @@ tox==3.0.0
 traitlets==4.3.2
 Unidecode==1.0.22
 untangle==1.1.1
-urllib3==1.22
+urllib3>=1.23
 uWSGI==2.0.15
 vine==1.1.4
 virtualenv==15.2.0

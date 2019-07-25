@@ -14,9 +14,6 @@ $(document).ready(function () {
         }
 
         function gen_plot(msg) {
-            var title = msg['title'];
-            var id = msg['review_id'];
-            var title_div = $("#plot_title");
             var data = msg['data'];
             var plt = Bokeh.Plotting;
             var yy = data['y'];
@@ -30,7 +27,6 @@ $(document).ready(function () {
                     y: yy,
                 }
             });
-            var tools = "pan,crosshair,wheel_zoom,reset,save";
             var image = new Bokeh.ImageURL({
                 url: data['img'],
                 x: xdr.start - 2.0, y: ydr.end, w: ydr.end - ydr.start - 2.7,
@@ -83,6 +79,14 @@ $(document).ready(function () {
         //         num_p += parseInt((incl_part / 66).toFixed());
         //     }, 30);
         // }
+        socket.on('blank_update', function (msg) {
+            $("#progress_txt").text(msg['msg']);
+            if (msg['msg'].indexOf('complete') > -1) {
+                $(".progress_div").slideUp(1000);
+            } else {
+                $(".progress_div").slideDown(1000);
+            }
+        });
         socket.on('page_content', function (msg) {
             if (msg['section'] === 'review_data') {
                 $("#review-data-container").html(msg['data']);
@@ -116,6 +120,9 @@ $(document).ready(function () {
                 var alpha_vals = data['alpha'];
                 var radii = data['enrollment'];
                 var pub_date = Date.parse($('#pub_date').html());
+                if (isNaN(pub_date)) {
+                    pub_date = Date.now();
+                }
                 var ydr = new Bokeh.Range1d({start: 0, end: 8000000000000});
                 var year_padding = 3.1556952 * (10 ** 10);
                 var xdr = new Bokeh.Range1d({
@@ -204,8 +211,10 @@ $(document).ready(function () {
                 var tap = new Bokeh.TapTool({callback: cb});
                 p.add_tools(tap);
                 p.add_tools(hover);
-                p.add_layout(pubdate);
-                p.add_layout(label);
+                if (msg['page'] === 'reviewdetail') {
+                    p.add_layout(pubdate);
+                    p.add_layout(label);
+                }
                 p.yaxis.visible = false;
                 p.xgrid.visible = false;
                 p.ygrid.visible = false;
@@ -220,6 +229,20 @@ $(document).ready(function () {
                         plot.animate({'opacity': 1}, 1000);
                     });
                 }
+            }
+            if (msg['section'] === 'recommended_trials') {
+                var rel_container = $("#rel_trials_container");
+                if (rel_container.is(':empty')) {
+                    rel_container.html(msg['data']);
+                    rel_container.slideDown(2000);
+                    $("#incl_trials_container").slideDown(2000);
+                } else {
+                    var node = $.parseHTML(msg['data']);
+                    var replacement = $(node).filter('#accordion-rel');
+                    $("#accordion-rel").html(replacement.html());
+                }
+                $("#related-reviews").html(msg['related_reviews']);
+                $("#related-reviews").slideDown(1000);
             }
             if (msg['section'] === 'rel_trials') {
                 var rel_container = $("#rel_trials_container");
@@ -401,6 +424,17 @@ $(document).ready(function () {
                     });
                 });
             }
+            if (window.location.pathname === '/blank') {
+                $(document).ready(function () {
+                    $(document).on("click", "#submit_text", function (e) {
+                        var text = $("#free_text").val();
+                        if (text.length === 0) {
+                            return;
+                        }
+                        socket.emit('freetext_trials', {'text': text});
+                    });
+                });
+            }
         });
         socket.on('search_update', function (msg) {
             console.log(msg);
@@ -563,6 +597,12 @@ $(document).ready(function () {
         $(document).on("click", ".rel_incl", function (e) {
             var nct_id = e.target.id.substring(0, 11);
             move_rel_incl(nct_id);
+        });
+        $(document).on("click", ".rec_rel_incl", function (e) {
+            var nct_id = e.target.id.substring(0, 11);
+            var panel = $('#panel_' + nct_id);
+            $(panel).detach().appendTo('#accordion-incl');
+            $('#' + nct_id + '_movincl').css('visibility', 'hidden');
         });
         $(document).on("click", ".save_review", function (e) {
             var val = true;
@@ -757,9 +797,12 @@ $(document).ready(function () {
                             });
                         }
                     } else {
-                        var to_move =  $("#panel_" + nct_id);
+                        var to_move = $("#panel_" + nct_id);
                         to_move.parent().prepend(to_move);
-                        if(to_move.is(":hidden")) {to_move.show();}
+                        if (to_move.is(":hidden")) {
+                            to_move.show();
+                        }
+                        to_move[0].scrollIntoView({behaviour: "smooth"});
                         $("#panel_" + nct_id + "> .panel-heading").effect("highlight", {}, 3000);
                         if (result['move']) {
                             $('#alert-place-' + category).html('<div class="alert alert-info "> <strong>Uh oh! </strong>' + result['message'] + '   <a class="btn btn-xs btn-primary pull-right move-trial">Move to this list</a></div>');

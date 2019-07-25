@@ -28,10 +28,7 @@ login_manager.login_view = 'login'
 
 ts = URLSafeTimedSerializer(app.secret_key)
 
-
-
 eutils_key = config.EUTILS_KEY
-
 
 
 @socketio.on('connect')
@@ -50,18 +47,49 @@ def trigger_basicbot2(json):
         bot.basicbot2.delay(review_id=review, sess_id=request.sid)
 
 
-@app.route('/plot',methods=['POST'])
+@app.route('/plot', methods=['POST'])
 def get_plot():
     """ generate new random TSNE plot for homepage """
     ids = crud.get_locked()
     test_id = random.choice(ids)
     review_data = crud.review_medtadata_db(test_id)
     trials = crud.get_review_trials_fast(test_id, usr=current_user if current_user.is_authenticated else None)
-    return json.dumps({'success': True, 'data':  {'section': 'plot', 'data': plot.get_tsne_data(trials['reg_trials']), 'page': 'home',
-                   'review_id': test_id,
-                   'title': review_data['title']}
-                       }), 200, {
+    return json.dumps(
+        {'success': True, 'data': {'section': 'plot', 'data': plot.get_tsne_data(trials['reg_trials']), 'page': 'home',
+                                   'review_id': test_id,
+                                   'title': review_data['title']}
+         }), 200, {
                'ContentType': 'application/json'}
+
+
+@socketio.on('freetext_trials')
+def freetext_trials(data):
+    freetext = data['text']
+    emit('blank_update', {'msg': 'calculating similar trials'}, room=request.sid)
+    trial_ids = bot.docsim_freetext(freetext)
+    emit('blank_update', {'msg': 'rendering similar trials'}, room=request.sid)
+    related = crud.related_reviews_from_trials(trial_ids)
+    trials = crud.get_trials_by_id(trial_ids)
+    plot_trials = []
+    for t in trials:
+        t = dict(t)
+        t['sum'] = 2
+        t['verified'] = False
+        t['relationship'] = 'relevant'
+        plot_trials.append(t)
+    emit('blank_update', {'msg': 'predictions complete'}, room=request.sid)
+    formatted = utils.trials_to_plotdata(plot_trials[:20])
+    socketio.emit('page_content',
+                  {'section': 'plot', 'data': formatted, 'page': 'blank',
+                   }, room=request.sid)
+
+    emit('page_content',
+         {'section': 'recommended_trials', 'data': render_template('recommended_trials.html', reg_trials=trials),
+          'related_reviews': render_template('related_reviews.html',
+                                             related_reviews=related)}, room=request.sid)
+
+    # plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
+    #                        sess_id=request.sid)
 
 
 @socketio.on('refresh_trials')
@@ -369,6 +397,12 @@ def search():
     return render_template('reviewdetail.html')
 
 
+@app.route('/blank', methods=['GET'])
+def blank():
+    """ load search page """
+    return render_template('blank.html')
+
+
 @app.route('/saved', methods=['GET'])
 def saved():
     """ load saved reviews page """
@@ -405,7 +439,6 @@ def incl_rel():
     crud.change_relationship(link_id, 'relevant')
     return json.dumps({'success': True, 'message': 'Trial moved successfully'}), 200, {
         'ContentType': 'application/json'}
-
 
 
 @app.route('/download/<detail>', methods=['GET'])

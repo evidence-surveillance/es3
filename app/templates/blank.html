@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="container-fluid pg_content" style="padding-bottom: 200px;">
+        <div class="modal fade" id="myModal" role="dialog">
+            <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Oops...</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Some text in the modal.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="col-lg-2 visible-lg" id="related-reviews" style="display: none;"></div>
+        <div class="col-lg-10 col-md-12">
+            <div class="row">
+                <div class="col-lg-12 col-md-12" id="review-data-container">
+                    <div class="page-header text-center">
+                        <div class="row">
+                            <div class="col-xs-10">
+                                <h3>Systematic Review Recommender<br>
+                                    <small><em>Enter some free text in the box below and we'll recommend some relevant trials</em></small>
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                         <div class="col-lg-12 col-md-12 col-sm-12" >
+                            <div class="form-group">
+                                <label for="comment"></label>
+                                <textarea class="form-control" rows="4" id="free_text"
+                                          placeholder="Submit some free text here and we'll recommend some trials that might be useful"></textarea><br>
+                                <button type="button" id="submit_text" class="btn  btn-primary btn-block "
+                                        value="False">Submit
+                                </button>
+                            </div>
+                         </div>
+
+
+                    </div>
+
+                    <br>
+
+                </div>
+            </div>
+            <div class="row">
+
+                        <div class="col-lg-12 col-md-12 col-sm-12 text-center" id="plot"
+                             style="height: 30vh; width: 80vw;">
+                            {{ plot|safe }}
+                        </div>
+
+            </div>
+            <div class="row">
+                <div class="col-lg-12 col-md-12">
+                    <div class="row " id="review-trials-container">
+                        <div id="included" class="col-md-6">
+
+                            <div class="progress_cochranebot progress-div" style="display:none;">
+                                <h6>cochranebot</h6>
+                                <h4 id="progress_txt_cochranebot">Running cochranebot</h4>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress_crossrefbot progress-div" style="display:none;">
+                                <h6>crossrefbot</h6>
+                                <h4 id="progress_txt_crossrefbot">Running crossrefbot</h4>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="incl_trials_container" style="display:none;" >
+                                <h3>Flagged trials</h3><hr>
+                                <div class="panel-group" id="accordion-incl" style="">
+                                </div>
+
+
+                            </div>
+                        </div>
+
+                        <div id="relevant" class="col-md-6">
+
+                            <div class="progress_basicbot progress-div" style="display:none;">
+                                <h6>basicbot1</h6>
+                                <h4 id="progress_txt_basicbot">running basicbot</h4>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress_basicbot2 progress-div" style="display:none;">
+                                <h6>basicbot2</h6>
+                                <h4 id="progress_txt_basicbot2">running basicbot2</h4>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="rel_trials_container" style="display: none;"></div>
+
+
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ super() }}
+{% endblock %}
