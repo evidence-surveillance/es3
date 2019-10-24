@@ -23,7 +23,8 @@ create table systematic_reviews
 	doi varchar(255),
 	verified_review boolean,
 	date_added timestamp default now() not null,
-	publish_date integer
+	publish_date integer,
+    publish_date_full timestamp
 )
 ;
 
