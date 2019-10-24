@@ -105,6 +105,7 @@ $(document).ready(function () {
             }
             if (msg['section'] === 'plot') {
                 var plot = $("#plot");
+                plot.removeClass('hidden');
                 var data = msg['data'];
                 var plt = Bokeh.Plotting;
                 var xx = [];
@@ -277,6 +278,15 @@ $(document).ready(function () {
             if (msg['section'] === 'incl_trials') {
                 var node = $.parseHTML(msg['data']);
                 var replacement = $(node).filter('#accordion-incl');
+                if (window.location.pathname === '/blank') {
+                    replacement.children().each(function(_, nct) {
+                        var nct_id = $(nct).attr('id').substring(6);
+                        console.log(nct_id);
+                        $(`#${nct_id}_movincl`).css('visibility', 'hidden');
+                    });
+                }
+
+
                 var incl_container = $("#incl_trials_container");
                 if (incl_container.is(':empty') || $("#accordion-incl").length === 0 || replacement.length === 0) {
                     incl_container.html(msg['data']);
@@ -284,7 +294,9 @@ $(document).ready(function () {
                         // refresh_dashboard();
                     });
                 } else {
-                    $("#accordion-incl").replaceWith(replacement);
+                    if (window.location.pathname === '/blank') {
+                        $('#incl_trials_container').html(msg['data']);
+                    } else $("#accordion-incl").replaceWith(replacement);
                 }
                 var size_li = $("#accordion-incl").children("div.panel-default").length;
                 var x = 20;
@@ -426,13 +438,39 @@ $(document).ready(function () {
             }
             if (window.location.pathname === '/blank') {
                 $(document).ready(function () {
+
+
                     $(document).on("click", "#submit_text", function (e) {
                         var text = $("#free_text").val();
                         if (text.length === 0) {
                             return;
                         }
-                        socket.emit('freetext_trials', {'text': text});
+                        $.ajax({
+                            url: '/ftext_review',
+                            method: 'post',
+                            contentType: 'application/json;charset=UTF-8',
+                            data: JSON.stringify({abstract: text}),
+                            success: function (data) {
+                                window.location.href = `/blank?id=${JSON.parse(data)['idx']}`;
+                            },
+                            error: function (err) {
+
+                                $('#submit_text').parent().append(`<div class="alert alert-warning" id="errmsg_submit">${err.responseText}</div>`);
+                                setTimeout(function () {
+                                    $('#errmsg_submit').remove();
+                                }, 5000);
+
+                            }
+                        })
                     });
+
+                    const idx = getUrlParameter('id');
+                    if (idx) {
+                        console.log('showing');
+                        $('#top-progress').slideDown(1000);
+
+                        socket.emit('freetext_trials', {'review_id': idx});
+                    }
                 });
             }
         });
@@ -569,6 +607,7 @@ $(document).ready(function () {
         });
 
         function move_rel_incl(nct_id) {
+            console.log('move_rel_incl');
             disable_elements();
             var panel = $('#panel_' + nct_id);
             var category = 'incl';
@@ -599,7 +638,22 @@ $(document).ready(function () {
             move_rel_incl(nct_id);
         });
         $(document).on("click", ".rec_rel_incl", function (e) {
+            console.log('rec rel incl');
             var nct_id = e.target.id.substring(0, 11);
+            if (window.location.pathname === '/blank') {
+                submitTrial(nct_id, 'included', true, function (data) {
+                    socket.emit('refresh_trials', {
+                        'ftext': window.location.pathname === '/blank',
+                        'review_id': getUrlParameter('id'),
+                        'type': 'incl',
+                        'plot': false
+                    });
+                });
+
+                $('#' + nct_id + '_movincl').css('visibility', 'hidden');
+                return;
+            }
+
             var panel = $('#panel_' + nct_id);
             $(panel).detach().appendTo('#accordion-incl');
             $('#' + nct_id + '_movincl').css('visibility', 'hidden');
@@ -610,7 +664,7 @@ $(document).ready(function () {
             if (typeof ($(this).attr('active')) === 'undefined') {
                 val = false;
             }
-            console.log(val);
+
             $.ajax({
                 url: "/save_review",
                 type: 'post',
@@ -631,6 +685,7 @@ $(document).ready(function () {
         });
 
         function move_incl_rel(nct_id) {
+            console.log('move_incl_rel');
             disable_elements();
             var category = 'incl';
             var panel = $('#panel_' + nct_id);
@@ -771,11 +826,11 @@ $(document).ready(function () {
             var re_nct = /(NCT|nct)[0-9]{8}/;
             var category = e.target.name;
             var nct_id = $('#' + category + '-id').val().trim();
+
             if (re_nct.test(nct_id)) {
-                console.log(getUrlParameter('searchterm'));
                 var accordion = $('#accordion-' + category);
-                disable_elements();
-                submitTrial(nct_id, (category.indexOf('incl') > -1 ? 'included' : 'relevant'), function (data) {
+                // disable_elements(); // todo: renable
+                submitTrial(nct_id, (category.indexOf('incl') > -1 ? 'included' : 'relevant'), window.location.pathname === '/blank', function (data) {
                     var result = JSON.parse(data);
                     if (result['success'] == true) {
                         accordion.fadeOut('slow');
@@ -787,16 +842,19 @@ $(document).ready(function () {
                         $('#accordion-' + category).prepend('');
                         // reload_trials(category);
                         socket.emit('refresh_trials', {
-                            'review_id': getUrlParameter('searchterm'),
+                            'ftext': window.location.pathname === '/blank',
+                            'review_id': getUrlParameter('searchterm') || getUrlParameter('id'),
                             'type': category,
                             'plot': true
                         });
-                        if (category.indexOf('incl') > -1) {
+
+                        if (category.indexOf('incl') > -1 && window.location.pathname === '/blank') {
                             socket.emit('trigger_basicbot2', {
                                 'review_id': getUrlParameter('searchterm')
                             });
                         }
                     } else {
+                        console.log(result);
                         var to_move = $("#panel_" + nct_id);
                         to_move.parent().prepend(to_move);
                         if (to_move.is(":hidden")) {
@@ -825,7 +883,7 @@ $(document).ready(function () {
                     }
                 });
             } else {
-                $('#alert-place-' + category).html('<div class="alert alert-warning "><strong>Uh oh!</strong> Please enter a valid ClinicalTrials.gov registry ID</div>');
+                $('#alert-place-' + category).html('<div class="alert alert-warning "><strong>Uh oh! </strong>Please enter a valid ClinicalTrials.gov registry ID</div>');
                 $('#alert-place-' + category).fadeIn(400, function () {
                     $('#alert-place-' + category).delay(2000).fadeOut("slow", function () {
                         enable_elements();
@@ -835,6 +893,13 @@ $(document).ready(function () {
         });
         $(document).on("click", ".row .dismiss", function (e) {
             var nct_id = e.target.id.substring(8);
+
+            if (window.location.pathname === '/blank') {
+                removeTrial(nct_id, getUrlParameter('id'));
+                $(`#${nct_id}_moveincl`).css('visibility', 'visible');
+                $(e.target).parents('.panel').remove();
+                return
+            }
             move_incl_rel(nct_id)
         });
 
@@ -898,15 +963,41 @@ $(document).ready(function () {
             });
         }
 
-        function submitTrial(id, relationship, callback) {
+        function removeTrial(nct_id, review_id) {
             $.ajax({
-                url: "/submittrial",
+                url: '/removeftexttrial',
+                type: 'post',
+                contentType: 'application/json;charset=UTF-8',
+                data: JSON.stringify({
+                    nct_id,
+                    review_id
+                }),
+                success: function (data) {
+
+                },
+                error: function (data2) {
+
+                }
+            })
+        }
+
+        function submitTrial(id, relationship, userCreated = false, callback) {
+            let review_id = getUrlParameter('searchterm');
+            let url = '/submittrial';
+
+            if (userCreated) {
+                review_id = getUrlParameter('id');
+                url = '/submitftexttrial';
+            }
+
+            $.ajax({
+                url,
                 type: 'post',
                 contentType: 'application/json;charset=UTF-8',
                 data: JSON.stringify({
                     nct_id: id,
                     relationship: relationship,
-                    review: getUrlParameter('searchterm')
+                    review: review_id
                 }),
                 success: function (data) {
                     callback(data);

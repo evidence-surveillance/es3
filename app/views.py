@@ -64,7 +64,7 @@ def get_plot():
 
 @socketio.on('freetext_trials')
 def freetext_trials(data):
-    freetext = data['text']
+    freetext = crud.get_ftext_review(data['review_id'])['abstract']
     emit('blank_update', {'msg': 'calculating similar trials'}, room=request.sid)
     trial_ids = bot.docsim_freetext(freetext)
     emit('blank_update', {'msg': 'rendering similar trials'}, room=request.sid)
@@ -88,6 +88,14 @@ def freetext_trials(data):
           'related_reviews': render_template('related_reviews.html',
                                              related_reviews=related)}, room=request.sid)
 
+    id = data['review_id']
+    trials = crud.get_ftext_trials_fast(id)
+
+    emit('page_content',
+         {'section': 'incl_trials',
+          'data': render_template('ftext_incl_trials.html', reg_trials=trials['reg_trials'])
+          }, room=request.sid)
+
     # plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
     #                        sess_id=request.sid)
 
@@ -101,30 +109,50 @@ def refresh_trials(json):
     id = json['review_id']
     type = json['type']
     plot_bool = json['plot']
-    locked = crud.review_lock_status(id)
-    sort = json['sort'] if 'sort' in json else 'total_votes'
-    trials = crud.get_review_trials_fast(id, order=sort, usr=current_user if current_user.is_authenticated else None)
-    relevant = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant']
-    verified = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included']
-    if (type == 'rel' and relevant) or (type == 'incl' and verified):
-        emit('page_content',
-             {'section': 'rel_trials' if type == 'rel' else 'incl_trials', 'sort': sort,
-              'data': render_template('rel_trials.html' if type == 'rel' else 'incl_trials.html',
-                                      reg_trials=trials['reg_trials'],
-                                      locked=locked)}, room=request.sid)
-        if plot_bool:
-            formatted = utils.trials_to_plotdata(trials['reg_trials'])
-            socketio.emit('page_content',
-                          {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
-                           'review_id': id
-                           }, room=request.sid)
+    ftext_bool = json['ftext']
 
-    elif type == 'incl' and not verified['ids']:
+    sort = json['sort'] if 'sort' in json else 'total_votes'
+
+    if ftext_bool:
+        trials = crud.get_ftext_trials_fast(id)
         emit('page_content',
-             {'section': 'incl_trials', 'sort': sort,
-              'data': render_template('incl_trials.html',
-                                      reg_trials=[],
-                                      locked=False)}, room=request.sid)
+             {'section': 'incl_trials',
+              'sort': sort,
+              'data': render_template('ftext_incl_trials.html', reg_trials=trials['reg_trials'])
+              }, room=request.sid)
+        # if plot_bool:
+        #     formatted = utils.trials_to_plotdata(trials['reg_trials'])
+        #     socketio.emit('page_content',
+        #                   {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
+        #                    'review_id': id
+        #                    }, room=request.sid)
+
+    else:
+        trials = crud.get_review_trials_fast(id, order=sort,
+                                             usr=current_user if current_user.is_authenticated else None)
+        locked = crud.review_lock_status(id)
+
+        relevant = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'relevant']
+        verified = [trial['nct_id'] for trial in trials['reg_trials'] if trial['relationship'] == 'included']
+        if (type == 'rel' and relevant) or (type == 'incl' and verified):
+            emit('page_content',
+                 {'section': 'rel_trials' if type == 'rel' else 'incl_trials', 'sort': sort,
+                  'data': render_template('rel_trials.html' if type == 'rel' else 'incl_trials.html',
+                                          reg_trials=trials['reg_trials'],
+                                          locked=locked)}, room=request.sid)
+            if plot_bool:
+                formatted = utils.trials_to_plotdata(trials['reg_trials'])
+                socketio.emit('page_content',
+                              {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
+                               'review_id': id
+                               }, room=request.sid)
+
+        elif type == 'incl' and not verified['ids']:
+            emit('page_content',
+                 {'section': 'incl_trials', 'sort': sort,
+                  'data': render_template('incl_trials.html',
+                                          reg_trials=[],
+                                          locked=False)}, room=request.sid)
 
 
 @socketio.on('search')
@@ -192,6 +220,7 @@ def search(json):
         article = ec.efetch(db='pubmed', id=id)
         found_review = None
         for art in article:
+            print art
             if art and str(art.pmid) == id:
                 found_review = art
                 break
@@ -399,15 +428,43 @@ def search():
 
 @app.route('/blank', methods=['GET'])
 def blank():
-    """ load search page """
-    return render_template('blank.html')
+    """ load ftext review page """
+    review_id = request.args.get('id')
+    abstract = ''
+    if review_id:
+        review = crud.get_ftext_review(review_id)
+        if not review:
+            return "That resource does not exist.", 404, {
+                'ContentType': 'application/json'}
+        abstract = review['abstract']
+        if current_user.db_id != review['user_id']:
+            return "Sorry! You do not have access to view this.", 403, {
+                'ContentType': 'application/json'}
+    return render_template('blank.html', abstract=abstract)
+
+
+@app.route('/ftext_review', methods=['POST'])
+def create_ftext_review():
+    """Create freetext review"""
+    if not current_user.is_authenticated:
+        return "Sorry! This action is only available to logged-in users", 401, {
+            'ContentType': 'application/json'}
+
+    data = request.json
+    abstract = data['abstract'] or ''
+    user_id = current_user.db_id
+    idx = crud.save_ftext_review(abstract, user_id)
+    return json.dumps({'success': True, 'message': 'Review saved successfully', 'idx': idx}), 201, {
+        'ContentType': 'application/json'}
 
 
 @app.route('/saved', methods=['GET'])
 def saved():
     """ load saved reviews page """
     reviews = crud.get_saved_reviews(current_user.db_id)
-    return render_template('saved.html', reviews=reviews)
+    ftext_reviews = crud.get_ftext_reviews(current_user.db_id)
+    print(ftext_reviews)
+    return render_template('saved.html', reviews=reviews, ftext_reviews=ftext_reviews)
 
 
 @app.route('/save_review', methods=['POST'])
@@ -547,6 +604,48 @@ def vote():
     conn.close()
     return json.dumps({'success': True, 'voters': update_voters(data['review'], data['id'])}), 200, {
         'ContentType': 'application/json'}
+
+
+@app.route('/removeftexttrial', methods=['POST'])
+def remove_ftext_trial():
+    """
+    remove a trial link from a ftext review
+    :return:
+    """
+    if not current_user.is_authenticated:
+        return "Sorry! This action is only available to logged-in users", 401, {
+            'ContentType': 'application/json'}
+    data = request.json
+
+    if data['nct_id'] and data['review_id']:
+        crud.remove_ftext_trial(data['review_id'], data['nct_id'])
+        return json.dumps({'success': True, 'message': 'Trial removed successfully'}), 200, {
+            'ContentType': 'application/json'}
+    else:
+        return json.dumps(
+            {'success': False, 'message': 'Request requires nct_id and review_id parameters', 'move': True}), 400, {
+                   'ContentType': 'application/json'}
+
+
+@app.route('/submitftexttrial', methods=['POST'])
+def submit_ftext_trial():
+    """
+    link a trial to a ftext review
+    :return:
+    """
+    if not current_user.is_authenticated:
+        return "Sorry! This action is only available to logged-in users", 401, {
+            'ContentType': 'application/json'}
+    data = request.json
+
+    if data['nct_id'] and data['review']:
+        crud.link_ftext_trial(data['review'], data['nct_id'])
+        return json.dumps({'success': True, 'message': 'Added trial successfully'}), 201, {
+            'ContentType': 'application/json'}
+    else:
+        return json.dumps(
+            {'success': False, 'message': 'Request requires nct_id and review_id parameters', 'move': True}), 400, {
+                   'ContentType': 'application/json'}
 
 
 @app.route('/submittrial', methods=['POST'])

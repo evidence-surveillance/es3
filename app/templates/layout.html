@@ -1,166 +1,166 @@
 {% block doc -%}
-<!DOCTYPE html>
-<html{% block html_attribs %}{% endblock html_attribs %}>
-{%- block html %}
+    <!DOCTYPE html>
+    <html{% block html_attribs %}{% endblock html_attribs %}>
+    {%- block html %}
 
-<head>
-    <title>trial2rev</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {%- block styles %}
-    <link href="{{ bootstrap_find_resource('css/bootstrap.css', cdn='bootstrap') }}" rel="stylesheet">
-    <link rel="preload" href="../static/css/style.css" as="style" onload="this.rel='stylesheet'">
-    <link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css"
-          type="text/css">
-    <link rel="preload" href="../static/css/lib/jquery.upvote.css" as="style"
-          onload="this.rel='stylesheet'">
-    <link rel="shortcut icon" href="../static/images/favicon.png">
-    <link rel="import" href="../static/js/lib/favorite-star.html">
+        <head>
+            <title>trial2rev</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            {%- block styles %}
+                <link href="{{ bootstrap_find_resource('css/bootstrap.css', cdn='bootstrap') }}" rel="stylesheet">
+                <link rel="preload" href="../static/css/style.css" as="style" onload="this.rel='stylesheet'">
+                <link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css"
+                      type="text/css">
+                <link rel="preload" href="../static/css/lib/jquery.upvote.css" as="style"
+                      onload="this.rel='stylesheet'">
+                <link rel="shortcut icon" href="../static/images/favicon.png">
+                <link rel="import" href="../static/js/lib/favorite-star.html">
 
-    {%- endblock styles %}
-</head>
-<body>
-<div id="wrapper">
-    {% block navbar %}
-    <nav class="navbar navbar-inverse">
-        <div class="container-fluid">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="/">trial2rev</a>
-            </div>
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav">
-                    <li><a href="/browse">browse</a></li>
-                    {% if current_user.is_authenticated %}
-                    <li><a href="/saved">saved reviews</a></li>
-
-                    {% endif %}
-                </ul>
-                <form class="navbar-form navbar-left" method="get" action="{{ url_for('search') }}">
-                    <div class="input-group">
-                        <input name="searchterm" id="id_search" type="text" class="form-control"
-                               placeholder="keywords, PMID, DOI..">
-                        <div class="input-group-btn">
-                            <button type="submit" id="nav_search" class="btn btn-default"><i
-                                    class="glyphicon glyphicon-search"></i></button>
+            {%- endblock styles %}
+        </head>
+        <body>
+        <div id="wrapper">
+            {% block navbar %}
+                <nav class="navbar navbar-inverse">
+                    <div class="container-fluid">
+                        <!-- Brand and toggle get grouped for better mobile display -->
+                        <div class="navbar-header">
+                            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                                    data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                                <span class="sr-only">Toggle navigation</span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                            </button>
+                            <a class="navbar-brand" href="/">trial2rev</a>
+                        </div>
+                        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                            <ul class="nav navbar-nav">
+                                <li><a href="/browse">browse</a></li>
+                                {% if current_user.is_authenticated %}
+                                    <li><a href="/saved">saved reviews</a></li>
+                                    <li><a href="/blank">recommender</a></li>
+                                {% endif %}
+                            </ul>
+                            <form class="navbar-form navbar-left" method="get" action="{{ url_for('search') }}">
+                                <div class="input-group">
+                                    <input name="searchterm" id="id_search" type="text" class="form-control"
+                                           placeholder="keywords, PMID, DOI..">
+                                    <div class="input-group-btn">
+                                        <button type="submit" id="nav_search" class="btn btn-default"><i
+                                                class="glyphicon glyphicon-search"></i></button>
+                                    </div>
+                                </div>
+                            </form>
+                            {% if current_user.is_authenticated %}
+                                <ul class="nav navbar-nav navbar-right navbar-inverse">
+                                    <li class="dropdown">
+                                        <a href="#" class="dropdown-toggle navbar-brand" data-toggle="dropdown"
+                                           role="button"
+                                           aria-haspopup="true"
+                                           aria-expanded="false"> {{ current_user.id }} <span class="caret"></span></a>
+                                        <ul class="dropdown-menu">
+                                            {% if current_user.permissions == 'admin' %}
+                                                <li><a href="{{ url_for('admin_panel') }}">admin</a></li>
+                                            {% endif %}
+                                            <li><a href="{{ url_for('profile') }}">change password</a></li>
+                                            <li role="separator" class="divider"></li>
+                                            <li><a href="{{ url_for('logout') }}">logout</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            {% else %}
+                                <ul class="nav navbar-nav navbar-right">
+                                    <li><a href="{{ url_for('login') }}">login</a></li>
+                                </ul>
+                            {% endif %}
+                        </div><!-- /.navbar-collapse -->
+                    </div><!-- /.container-fluid -->
+                </nav>
+            {%- endblock navbar %}
+            <article>
+                <div class="container">
+                    <div id="top-progress" class="progress_div" style="display: none;">
+                        <h3 id="progress_txt">Loading...</h3>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                 aria-valuemin="0" aria-valuemax="100" style="width:100%">
+                            </div>
                         </div>
                     </div>
-                </form>
-                {% if current_user.is_authenticated %}
-                <ul class="nav navbar-nav navbar-right navbar-inverse">
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle navbar-brand" data-toggle="dropdown"
-                           role="button"
-                           aria-haspopup="true"
-                           aria-expanded="false"> {{ current_user.id }} <span class="caret"></span></a>
-                        <ul class="dropdown-menu">
-                            {% if current_user.permissions == 'admin' %}
-                            <li><a href="{{ url_for('admin_panel') }}">admin</a></li>
-                            {% endif %}
-                            <li><a href="{{ url_for('profile') }}">change password</a></li>
-                            <li role="separator" class="divider"></li>
-                            <li><a href="{{ url_for('logout') }}">logout</a></li>
-                        </ul>
-                    </li>
-                </ul>
-                {% else %}
-                <ul class="nav navbar-nav navbar-right">
-                    <li><a href="{{ url_for('login') }}">login</a></li>
-                </ul>
-                {% endif %}
-            </div><!-- /.navbar-collapse -->
-        </div><!-- /.container-fluid -->
-    </nav>
-    {%- endblock navbar %}
-    <article>
-        <div class="container">
-            <div class="progress_div" style="display: none;">
-                <h3 id="progress_txt">Loading...</h3>
-                <div class="progress">
-                    <div class="progress-bar progress-bar-striped active" role="progressbar"
-                         aria-valuemin="0" aria-valuemax="100" style="width:100%">
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            <div class=flashes>
+                                {% for message in messages %}
+                                    <div class="alert alert-warning alert-dismissable"><a href="#" class="close"
+                                                                                          data-dismiss="alert"
+                                                                                          aria-label="close">&times;</a>
+                                        <h4> {{ message }}</h4></div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                {% block content %}{% endblock %}
+            </article>
+            {% block footer %}
+                <footer id="footer" class="navbar-nav navbar-inverse">
+                    <div class="container-fluid">
+                        <div class="row"
+                             style="padding-bottom: 20px; padding-top: 20px; padding-left: 20px; padding-right: 20px;">
+                            <div class="col-xs-3 center-block">
+                                <strong>trial2rev</strong><br>
+                                <small>a shared space for humans and machines <br>
+                                    to work together to <br>
+                                    update systematic reviews.
+                                </small>
+
+                            </div>
+                            <div class="col-xs-3"><strong>help</strong><br>
+                                <small><a href="/howto" class="footer-link">how to use</a><br>
+                                    <a href="/moreinfo" class="footer-link">more info</a><br>
+                                    <a href="/download" class="footer-link">download</a></small>
+                            </div>
+                            <div class="col-xs-3 text-center">
+                                <small><a href="/privacy" class="footer-link">privacy</a><br>
+                                    <a href="/legal" class="footer-link">legal</a></small>
+                            </div>
+                            <div class="col-xs-3 text-right"><a class="github-button"
+                                                                href="https://github.com/evidence-surveillance/trial2rev/subscription"
+                                                                data-icon="octicon-eye"
+                                                                aria-label="Watch evidence-surveillance/trial2rev on GitHub">Watch</a><br>
+                                <!-- Place this tag where you want the button to render. -->
+                                <a class="github-button" href="https://github.com/evidence-surveillance/trial2rev"
+                                   data-icon="octicon-star" aria-label="Star evidence-surveillance/trial2rev on GitHub">Star</a><br>
+                                <!-- Place this tag where you want the button to render. -->
+                                <a class="github-button" href="https://github.com/evidence-surveillance/trial2rev/fork"
+                                   data-icon="octicon-repo-forked"
+                                   aria-label="Fork evidence-surveillance/trial2rev on GitHub">Fork</a></div>
+                        </div>
+
+
                     </div>
-                </div>
-            </div>
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class=flashes>
-                {% for message in messages %}
-                <div class="alert alert-warning alert-dismissable"><a href="#" class="close"
-                                                                      data-dismiss="alert"
-                                                                      aria-label="close">&times;</a>
-                    <h4> {{ message }}</h4></div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            {% endwith %}
+                </footer>
+            {% endblock %}
+            {% block scripts %}
+                <script src="{{ bootstrap_find_resource('jquery.js', cdn='jquery') }}"></script>
+                <script src="{{ bootstrap_find_resource('js/bootstrap.js', cdn='bootstrap') }}"></script>
+                <script src="../static/js/lib/jquery.upvote.js" type="application/javascript"></script>
+                <script src="../static/js/lib/http_code.jquery.com_ui_1.12.1_jquery-ui.js"></script>
+                <script src="../static/js/main.js" type="application/javascript"></script>
+                <script type="text/javascript"
+                        src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+                <script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.js"></script>
+                <script type="text/javascript"
+                        src="https://cdn.pydata.org/bokeh/release/bokeh-api-1.0.4.min.js"></script>
+                {#        <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.0.0.min.js"></script>#}
+
+                <script async defer src="https://buttons.github.io/buttons.js"></script>
+            {%- endblock scripts %}
         </div>
-        {% block content %}{% endblock %}
-    </article>
-    {% block footer %}
-    <footer id="footer" class="navbar-nav navbar-inverse">
-        <div class="container-fluid">
-            <div class="row"
-                 style="padding-bottom: 20px; padding-top: 20px; padding-left: 20px; padding-right: 20px;">
-                <div class="col-xs-3 center-block">
-                    <strong>trial2rev</strong><br>
-                    <small>a shared space for humans and machines <br>
-                        to work together to <br>
-                        update systematic reviews.
-                    </small>
-
-                </div>
-                <div class="col-xs-3"><strong>help</strong><br>
-                    <small><a href="/howto" class="footer-link">how to use</a><br>
-                        <a href="/moreinfo" class="footer-link">more info</a><br>
-                        <a href="/download" class="footer-link">download</a></small>
-                </div>
-                <div class="col-xs-3 text-center">
-                    <small><a href="/privacy" class="footer-link">privacy</a><br>
-                        <a href="/legal" class="footer-link">legal</a></small>
-                </div>
-                <div class="col-xs-3 text-right"><a class="github-button"
-                                                     href="https://github.com/evidence-surveillance/trial2rev/subscription"
-                                                     data-icon="octicon-eye"
-                                                     aria-label="Watch evidence-surveillance/trial2rev on GitHub">Watch</a><br>
-                    <!-- Place this tag where you want the button to render. -->
-                    <a class="github-button" href="https://github.com/evidence-surveillance/trial2rev"
-                       data-icon="octicon-star" aria-label="Star evidence-surveillance/trial2rev on GitHub">Star</a><br>
-                    <!-- Place this tag where you want the button to render. -->
-                    <a class="github-button" href="https://github.com/evidence-surveillance/trial2rev/fork"
-                       data-icon="octicon-repo-forked"
-                       aria-label="Fork evidence-surveillance/trial2rev on GitHub">Fork</a></div>
-            </div>
-
-
-        </div>
-    </footer>
-    {% endblock %}
-    {% block scripts %}
-    <script src="{{ bootstrap_find_resource('jquery.js', cdn='jquery') }}"></script>
-    <script src="{{ bootstrap_find_resource('js/bootstrap.js', cdn='bootstrap') }}"></script>
-    <script src="../static/js/lib/jquery.upvote.js" type="application/javascript"></script>
-    <script src="../static/js/lib/http_code.jquery.com_ui_1.12.1_jquery-ui.js"></script>
-    <script src="../static/js/main.js" type="application/javascript"></script>
-    <script type="text/javascript"
-            src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
-    <script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.js"></script>
-    <script type="text/javascript"
-            src="https://cdn.pydata.org/bokeh/release/bokeh-api-1.0.4.min.js"></script>
-{#        <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.0.0.min.js"></script>#}
-
-    <script async defer src="https://buttons.github.io/buttons.js"></script>
-    {%- endblock scripts %}
-</div>
-</body>
-{%- endblock html %}
-</html>
+        </body>
+    {%- endblock html %}
+    </html>
 {% endblock doc -%}
 
 

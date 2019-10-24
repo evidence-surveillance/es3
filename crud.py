@@ -43,6 +43,16 @@ def get_saved_reviews(user_id):
     return get_reviews_with_ids(reviews)
 
 
+def get_ftext_reviews(user_id):
+    """ Retrieve all ftext reviews for user """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute(
+        "SELECT abstract, review_id, dated_added from freetext_reviews where user_id = %s order by dated_added;",
+        (user_id,))
+    return cur.fetchall()
+
+
 def save_review(review_id, user_id, bool):
     """
     Add or remove a saved review for user
@@ -59,6 +69,94 @@ def save_review(review_id, user_id, bool):
     else:
         cur.execute("DELETE FROM user_reviews where user_id = %s and review_id = %s;", (user_id, review_id))
     conn.commit()
+    conn.close()
+
+
+def save_ftext_review(abstract, user_id):
+    """
+    Save (or update) a freetext review
+    :param abstract:
+    :param user_id:
+    """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO freetext_reviews(user_id, abstract)
+        VALUES (%s, %s)
+        ON CONFLICT (review_id) DO UPDATE
+        SET abstract = %s
+        RETURNING review_id;
+    """, (user_id, abstract, abstract))
+    conn.commit()
+    idx = cur.fetchone()[0]
+    conn.close()
+    return idx
+
+
+def get_ftext_review(review_id):
+    """
+    Get a freetext review
+    :param review_id:
+    :return:
+    """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute("""
+        SELECT *
+        FROM freetext_reviews
+        WHERE review_id = %s;
+    """, (review_id,))
+
+    res = cur.fetchone()
+    conn.close()
+    return res
+
+
+def remove_ftext_trial(review_id, nct_id):
+    """
+    remove a link between the specified freetext review and a trial
+    @param review_id: PMID of review
+    @param nct_id: NCTID of trial
+    """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor()
+    sql = """
+         DELETE
+         FROM freetext_review_rtrial
+         WHERE review_id = %s and nct_id = %s
+    """
+    try:
+        cur.execute(sql, (review_id, nct_id,))
+        conn.commit()
+        print('deleted', review_id, nct_id, 'link')
+    except psycopg2.IntegrityError as e:
+        print e
+        conn.rollback()
+    conn.close()
+
+
+def link_ftext_trial(review_id, nct_id):
+    """
+    create a new link between the specified freetext review and a trial
+    @param review_id: PMID of review
+    @param nct_id: NCTID of trial
+    """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor()
+    sql = """
+        INSERT INTO freetext_review_rtrial(review_id, nct_id) 
+        VALUES (%s, %s) 
+        ON CONFLICT (review_id, nct_id) DO NOTHING;
+    """
+    try:
+        cur.execute(sql, (review_id, nct_id,))
+        conn.commit()
+    except psycopg2.IntegrityError as e:
+        print e
+        conn.rollback()
+        if add_missing_trial(nct_id):
+            cur.execute(sql, (review_id, nct_id,))
+            conn.commit()
     conn.close()
 
 
@@ -556,7 +654,6 @@ def related_reviews(review_id):
     return result
 
 
-
 def related_reviews_from_trials(nct_ids):
     """  get a list of review PMIDs that share trials with the specified review PMID, ordered by # of shared trials  """
     conn = dblib.create_con(VERBOSE=True)
@@ -588,6 +685,41 @@ def is_starred(review_id, user_id):
     res = cur.fetchone()
     conn.close()
     return True if res else False
+
+
+def get_ftext_trials_fast(review_id):
+    """
+    retrieve all ftext trials related to a review
+    @param review_id: pmid of review
+    @return: all registered trials and their linked publications
+    """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute("""
+        SELECT tr.nct_id, tr.brief_title, tr.overall_status, tr.brief_summary, tr.enrollment, tr.completion_date
+        FROM tregistry_entries tr 
+        INNER JOIN freetext_review_rtrial rt ON tr.nct_id = rt.nct_id 
+        LEFT JOIN trialpubs_rtrial t on tr.nct_id = t.nct_id 
+        WHERE rt.review_id = %s 
+        GROUP BY tr.nct_id, rt.review_id, rt.nct_id
+    """, (review_id,))
+
+    reg_trials = list(cur.fetchall())
+    # for i, trial in enumerate(reg_trials):
+    #     trial = dict(trial)
+    #     if usr:
+    #         for v in trial['voters']:
+    #             if usr and usr.nickname == v[1]:
+    #                 trial['user_vote'] = v[0]
+    #         trial['nicknames'] = ['you' if x[1] == usr.nickname else x[1] for x in trial['voters'] if x[1] is not None]
+    #     else:
+    #         trial['nicknames'] = [x[1] for x in trial['voters'] if x[1] is not None]
+    #     if trial['nicknames']:
+    #         trial['voters'] = str(', '.join(trial['nicknames']))
+    #     else:
+    #         trial['voters'] = ""
+    #     reg_trials[i] = trial.copy()
+    return {'reg_trials': reg_trials}
 
 
 def get_review_trials_fast(review_id, order='total_votes', usr=None):
@@ -629,6 +761,7 @@ def get_review_trials_fast(review_id, order='total_votes', usr=None):
         reg_trials[i] = trial.copy()
     return {'reg_trials': reg_trials}
 
+
 def get_trials_by_id(nct_list):
     """
     get the details of all trials specified in nct_list
@@ -637,7 +770,9 @@ def get_trials_by_id(nct_list):
     """
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute("SELECT tr.nct_id, tr.brief_title, tr.overall_status, tr.enrollment, tr.completion_date,json_agg(distinct t.trialpub_id::TEXT) as trialpubs FROM tregistry_entries tr left join trialpubs_rtrial t on (tr.nct_id = t.nct_id and tr.nct_id in %s ) where tr.nct_id in %s  GROUP BY tr.nct_id, tr.brief_title, tr.overall_status, tr.enrollment, tr.completion_date;",(tuple(nct_list),tuple(nct_list)))
+    cur.execute(
+        "SELECT tr.nct_id, tr.brief_title, tr.overall_status, tr.enrollment, tr.completion_date,json_agg(distinct t.trialpub_id::TEXT) as trialpubs FROM tregistry_entries tr left join trialpubs_rtrial t on (tr.nct_id = t.nct_id and tr.nct_id in %s ) where tr.nct_id in %s  GROUP BY tr.nct_id, tr.brief_title, tr.overall_status, tr.enrollment, tr.completion_date;",
+        (tuple(nct_list), tuple(nct_list)))
     trials = cur.fetchall()
     conn.close()
     return trials

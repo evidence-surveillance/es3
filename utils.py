@@ -114,8 +114,9 @@ def trials_to_plotdata(trials):
     alpha_vals = []
     ids = []
     enrollment = []
-    max_enrollment = max(x['enrollment'] for x in trials if x['completion_date'] and x['enrollment'] and (
-                x['sum'] > 1 or x['verified'] or x['relationship'] == 'included'))
+    enrolls = [x['enrollment'] for x in trials if x['completion_date'] and x['enrollment'] and (
+            x['sum'] > 1 or x['verified'] or x['relationship'] == 'included')]
+    max_enrollment = max(enrolls) if len(enrolls) else 0
     for x in trials:
         if x['completion_date'] and x['enrollment'] and (
                 x['sum'] > 1 or x['verified'] or x['relationship'] == 'included'):
@@ -147,8 +148,9 @@ def trials_to_plotdata(trials):
     res = {'dates': get_sorted(sorted_enrollment, dates), 'colours': get_sorted(sorted_enrollment, colours),
            'enrollment': get_sorted(sorted_enrollment, normalised_enrollment),
            'verified': get_sorted(sorted_enrollment, verified),
-           'y_vals': sample_floats(2000000000000, 6000000000000, len(dates)), 'alpha': get_sorted(sorted_enrollment,alpha_vals),
-           'titles':get_sorted(sorted_enrollment,ids), 'real_enrollment':get_sorted(sorted_enrollment,enrollment)}
+           'y_vals': sample_floats(2000000000000, 6000000000000, len(dates)),
+           'alpha': get_sorted(sorted_enrollment, alpha_vals),
+           'titles': get_sorted(sorted_enrollment, ids), 'real_enrollment': get_sorted(sorted_enrollment, enrollment)}
     return res
 
 

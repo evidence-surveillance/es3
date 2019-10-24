@@ -1,11 +1,10 @@
-<h3> {{ reg }}Included registered trials</h3>
+<h3> {{ reg }}Flagged trials</h3>
 {% if current_user.is_authenticated %}
     <div class="input-group">
         <input type="text" class="form-control" id="incl-id"
-               placeholder="Submit included trials e.g. NCT00000000..." {% if locked == True %}disabled{% endif %}>
+               placeholder="Submit included trials e.g. NCT00000000...">
         <span class="input-group-btn">
-                        <button class="btn btn-secondary nct-submit" name="incl" type="button"
-                                {% if locked == True %}disabled{% endif %}>+</button>
+                        <button class="btn btn-secondary nct-submit" name="incl" type="button">+</button>
                       </span>
     </div>
 {% endif %}
@@ -13,7 +12,6 @@
 <div id="alert-place-incl"></div>
 <hr>
 
-<br>
 
 {% if reg_trials|length == 0 %}
     <div class="row">
@@ -24,84 +22,18 @@
     </div>
 {% else %}
 
-    {% if locked == False and current_user.is_authenticated %}
-
-        <div id="compl_vote">
-            <form>
-                <div class="row">
-                    <div class="col-1 col-xs-12">
-                        <button type="button" class="btn btn-primary btn-block btn-incl-cmp" value="True">This
-                            list is complete
-                        </button>
-                    </div>
-
-                </div>
-            </form>
-        </div>    <br>
-
-    {% elif locked == True and current_user.is_authenticated %}
-        <div id="compl_vote">
-            <form>
-                <div class="row">
-                    <div class="col-2 col-xs-12">
-                        <button type="button" class="btn  btn-primary btn-block btn-incl-cmp" value="False">This
-                            list is incomplete
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>    <br>
-
-
-    {% endif %}
-    <div class="row">
-        <div class="col-xs-1">
-            <div style="padding-top: 6px" class="text-center">Sort:</div>
-        </div>
-        <div class="col-xs-11">
-            <div class="btn-group btn-group-justified sort" data-toggle="buttons" id="incltrial-order">
-                <div class="btn-group" role="group">
-                    <label class="btn btn-primary incl" id="total_votes">
-                        <input type="radio">Total votes</label>
-                </div>
-                <div class="btn-group" role="group">
-                    <label class="btn btn-primary active incl" id="net_upvotes">
-                        <input type="radio">Net upvotes</label>
-                </div>
-                <div class="btn-group" role="group">
-                    <label class="btn btn-primary incl" id="completion_date">
-                        <input type="radio">Completion date</label>
-                </div>
-            </div>
-        </div>
-    </div>
-    <br>
-
-
     <div class="panel-group" id="accordion-incl" style="">
 
         {% for trial in reg_trials %}
-            {% if trial.relationship == 'included' %}
                 <div class="panel panel-default" id="panel_{{ trial.nct_id }}">
                     <div class="panel-heading">
                         <div class="row">
 
                             <div class="col-xs-12" style="vertical-align: middle;">
                                 <div class="row">
-                                    {% if not trial.verified and current_user.is_authenticated %}
                                         <div id="dismiss_{{ trial.nct_id }}"
                                              class="col-xs-1 dismiss">{{ '&#10008;'|safe }} </div>
-                                    {% endif %}
-                                    <div class="col-xs-1">{{ "&#x1f512;"|safe if trial.verified else "💡"|safe }}</div>
-                                    <div class="col-xs-7 nickname-cont">
-                                        {% if trial.verified %}
-                                            Verified
-                                        {% elif not trial.verified and current_user.is_authenticated %}
-                                            {{ 'Submitted by <a class="nicknames" href="#" data-toggle="tooltip" title="'|safe+trial.voters+'">'|safe  + trial.voters +'</a>'|safe }}
-                                        {% else %}
-                                            Unverified
-                                        {% endif %}
-                                    </div>
+                                    <div class="col-xs-1">{{ "💡"|safe }}</div>
 
                                     <div class="col-xs-{{ '4' if trial.verified or not current_user.is_authenticated else '3' }}">
                                         {% if trial.overall_status in ('Completed','Available') %}
@@ -149,7 +81,7 @@
                         </div>
                     </div>
                 </div>
-            {% endif %}
+
         {% endfor %}
     </div>
     <div class="row">

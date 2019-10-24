@@ -25,40 +25,71 @@
         <div class="col-lg-10 col-md-12">
             <div class="row">
                 <div class="col-lg-12 col-md-12" id="review-data-container">
+                    {% if abstract %}
+                        <a href="/blank" class="btn btn-primary" style="float:right">Create New +</a>
+                    {% endif %}
                     <div class="page-header text-center">
                         <div class="row">
                             <div class="col-xs-10">
                                 <h3>Systematic Review Recommender<br>
-                                    <small><em>Enter some free text in the box below and we'll recommend some relevant trials</em></small>
+                                    {% if not abstract %}
+                                        <small><em>Enter some free text in the box below and we'll recommend some
+                                            relevant
+                                            trials</em></small>
+                                    {% endif %}
                                 </h3>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                         <div class="col-lg-12 col-md-12 col-sm-12" >
-                            <div class="form-group">
-                                <label for="comment"></label>
-                                <textarea class="form-control" rows="4" id="free_text"
-                                          placeholder="Submit some free text here and we'll recommend some trials that might be useful"></textarea><br>
-                                <button type="button" id="submit_text" class="btn  btn-primary btn-block "
-                                        value="False">Submit
-                                </button>
-                            </div>
-                         </div>
-
-
-                    </div>
-
-                    <br>
 
                 </div>
             </div>
             <div class="row">
 
-                        <div class="col-lg-12 col-md-12 col-sm-12 text-center" id="plot"
-                             style="height: 30vh; width: 80vw;">
-                            {{ plot|safe }}
-                        </div>
+                <div class="col-lg-12 col-md-12 col-sm-12 text-center hidden" id="plot"
+                     style="height: 30vh; width: 80vw;">
+                    {{ plot|safe }}
+                </div>
+
+            </div>
+
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12">
+                    <div class="form-group">
+                        {% if abstract %}
+                            <br/>
+                            <div class="row">
+                                <div class="col-md-12">
+
+                                    <div class="panel-group">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading text-center">
+                                                <h1 class="panel-title">
+                                                    <a data-toggle="collapse" href="#collapseAbs" class=""
+                                                       aria-expanded="true">Abstract</a>
+                                                </h1>
+                                            </div>
+                                            <div id="collapseAbs" class="panel-collapse collapse"
+                                                 aria-expanded="false" style="height: 0">
+                                                <div class="panel-body">{{ abstract }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        {% else %}
+                            <label for="comment"></label>
+                            <textarea class="form-control" rows="4" id="free_text"
+                                      placeholder="Submit some free text here and we'll recommend some trials that might be useful">{{ abstract }}</textarea>
+                            <br>
+                            <button type="button" id="submit_text" class="btn  btn-primary btn-block "
+                                    value="False">Submit
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
 
             </div>
             <div class="row">
@@ -86,8 +117,20 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="incl_trials_container" style="display:none;" >
-                                <h3>Flagged trials</h3><hr>
+                            <div id="incl_trials_container" style="display:none;">
+                                <h3>Flagged trials</h3>
+
+                                {% if current_user.is_authenticated %}
+                                    <div class="input-group">
+                                        <input type="text" id="incl-id" class="form-control"
+                                               placeholder="Submit relevant trials e.g. NCT00000000...">
+                                        <span class="input-group-btn">
+                        <button class="btn btn-secondary nct-submit" name="incl" data-for="ftext" type="button">+</button>
+                      </span>
+                                    </div>
+                                {% endif %}
+                                <div id="alert-place-incl"></div>
+                                <hr>
                                 <div class="panel-group" id="accordion-incl" style="">
                                 </div>
 
