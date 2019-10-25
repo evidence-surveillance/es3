@@ -46,10 +46,10 @@ $(document).ready(function () {
                 line_color: null,
                 fill_alpha: 0.8
             });
-            p.yaxis.visible = false;
-            p.xaxis.visible = false;
-            p.xgrid.visible = false;
-            p.ygrid.visible = false;
+            p.yaxis[0].visible = false;
+            p.xaxis[0].visible = false;
+            p.xgrid[0].visible = false;
+            p.ygrid[0].visible = false;
             p.border_fill_color = null;
             p.outline_line_color = null;
             return p
@@ -96,43 +96,47 @@ $(document).ready(function () {
                 setPubDate();
             }
             if (msg['section'] === 'search_results') {
-                console.log('recieved results');
-                console.log(msg['data']);
                 $(".pg_content").attr('style', 'display:none;');
                 $(".pg_content").html(msg['data']);
                 $(".pg_content").slideDown(1000);
                 $(".progress_div").slideUp(1000);
             }
             if (msg['section'] === 'plot') {
-                var plot = $("#plot");
-                plot.removeClass('hidden');
-                var data = msg['data'];
+                var plot = $("#plot"); // The plot dom element
+                plot.removeClass('hidden'); // Show plot
+                var data = msg['data']; // The plot data
+
+
                 var plt = Bokeh.Plotting;
-                var xx = [];
-                for (dat in data['dates']) {
-                    xx.push(Date.parse(data['dates'][dat]));
-                }
-                var colors = [];
-                for (col in data['colours']) {
-                    colors.push(plt.color.apply(this, data['colours'][col]));
-                }
-                var M = data['colours'].length;
+
+                // Axes data
+                var xx = data['dates'].map(Date.parse);
                 var yy = data['y_vals'];
+
+                // Circles
+                var colors = data['colours'].map(c => plt.color(...c));
                 var alpha_vals = data['alpha'];
                 var radii = data['enrollment'];
-                var pub_date = Date.parse($('#pub_date').html());
-                if (isNaN(pub_date)) {
-                    pub_date = Date.now();
-                }
-                var ydr = new Bokeh.Range1d({start: 0, end: 8000000000000});
-                var year_padding = 3.1556952 * (10 ** 10);
+                var max_radii = Math.max(...radii);
+
+                // Review publish date
+                var pub_date =Date.parse($('#pub_date').html()) ||  Date.now();
+
+                // Domain and range
+                var y_max = Math.max(...yy);
+                var x_max = Math.max(...xx, pub_date);
+                var x_min = Math.min(...xx, pub_date);
+                var ydr = new Bokeh.Range1d({start: 0, end: y_max + max_radii});
                 var xdr = new Bokeh.Range1d({
-                    start: Math.min(Math.min(...xx), pub_date) - year_padding,
-                    end: Math.max(Math.max(...xx), pub_date) + year_padding
+                    start: x_min - 0.13 * (x_max - x_min),
+                    end: x_max + 0.13 * (x_max - x_min)
                 });
+
+                // Published Line
+
                 var label = new Bokeh.Label({
                     x: pub_date,
-                    y: 7000000000000,
+                    y: (y_max + max_radii) * 8.6 / 10,
                     text: 'Systematic Review Published',
                     text_align: 'center',
                     background_fill_color: 'white',
@@ -143,11 +147,13 @@ $(document).ready(function () {
                     line_color: 'black',
                     line_dash: [5, 5]
                 });
+
+                // Create plot
                 var source = new Bokeh.ColumnDataSource({
                     data: {
                         x: xx,
                         y: yy,
-                        colors: colors,
+                        colors,
                         alpha: alpha_vals,
                         dates: data['dates'],
                         title: data['titles'],
@@ -160,9 +166,12 @@ $(document).ready(function () {
                     sizing_mode: 'stretch_both',
                     y_range: ydr,
                     x_range: xdr,
-                    x_axis_label: 'trial completion date'
+                    x_axis_label: 'trial completion date',
+                    x_axis_type: 'datetime',
                 });
-                p.xaxis.formatter = new Bokeh.DatetimeTickFormatter({});
+                p.yaxis[0].visible = false;
+                p.xgrid[0].visible = false;
+                p.ygrid[0].visible = false;
                 var renderers = [];
                 var circles = p.circle({field: "x"}, {field: "y"}, {
                     source: source,
@@ -212,13 +221,13 @@ $(document).ready(function () {
                 var tap = new Bokeh.TapTool({callback: cb});
                 p.add_tools(tap);
                 p.add_tools(hover);
+
+
                 if (msg['page'] === 'reviewdetail') {
                     p.add_layout(pubdate);
                     p.add_layout(label);
                 }
-                p.yaxis.visible = false;
-                p.xgrid.visible = false;
-                p.ygrid.visible = false;
+
                 if (!$.trim(plot.html())) {
                     Bokeh.Plotting.show(p, plot);
                     plot.slideDown(2000);
@@ -279,9 +288,9 @@ $(document).ready(function () {
                 var node = $.parseHTML(msg['data']);
                 var replacement = $(node).filter('#accordion-incl');
                 if (window.location.pathname === '/blank') {
-                    replacement.children().each(function(_, nct) {
+                    replacement.children().each(function (_, nct) {
                         var nct_id = $(nct).attr('id').substring(6);
-                        console.log(nct_id);
+
                         $(`#${nct_id}_movincl`).css('visibility', 'hidden');
                     });
                 }
@@ -290,9 +299,7 @@ $(document).ready(function () {
                 var incl_container = $("#incl_trials_container");
                 if (incl_container.is(':empty') || $("#accordion-incl").length === 0 || replacement.length === 0) {
                     incl_container.html(msg['data']);
-                    incl_container.slideDown(3000, function () {
-                        // refresh_dashboard();
-                    });
+                    incl_container.slideDown(3000);
                 } else {
                     if (window.location.pathname === '/blank') {
                         $('#incl_trials_container').html(msg['data']);
@@ -331,7 +338,7 @@ $(document).ready(function () {
                 },
                 success: function (data) {
                     data = JSON.parse(data)['data'];
-                    console.log(data);
+
                     for (var i = 0; i < data.length; i++) {
                         $("#" + data[i]['code']).html(data[i]['count'])
                     }
@@ -354,7 +361,7 @@ $(document).ready(function () {
                 },
                 success: function (data) {
                     data = JSON.parse(data)['data'];
-                    console.log(data);
+
                     for (var i = 0; i < data.length; i++) {
                         $("#condition_" + data[i]['id']).html(data[i]['count'])
                     }
@@ -369,7 +376,7 @@ $(document).ready(function () {
         socket.on('my_response', function (msg) {
             if (document.URL.indexOf("search") >= 0) {
                 $(document).ready(function () {
-                    console.log('triggering search');
+
                     socket.emit('search', {'review_id': getUrlParameter('searchterm')});
                     $(".progress_div").slideDown(1000);
                 });
@@ -379,7 +386,7 @@ $(document).ready(function () {
                 $(document).ready(function () {
                     var title_div = $("#plot_title");
                     var plot = $("#plot");
-                    console.log('triggering new plot');
+
                     getPlot(function (msg) {
                         msg = JSON.parse(msg)['data'];
                         var p = gen_plot(msg);
@@ -390,22 +397,7 @@ $(document).ready(function () {
                         plot.fadeIn();
                         $("#refresh_plot").fadeIn();
                     });
-                    // var plot_interval = window.setInterval(function () {
-                    //     plot.fadeOut();
-                    //     title_div.fadeOut();
-                    //     $("#refresh_plot").fadeOut();
-                    //     getPlot(function (msg) {
-                    //         msg = JSON.parse(msg)['data'];
-                    //         var p = gen_plot(msg);
-                    //         plot.empty();
-                    //         Bokeh.Plotting.show(p, plot);
-                    //         title_div.html(msg['title']);
-                    //         title_div.attr('href', '/search?searchterm=' + msg['review_id']);
-                    //         title_div.fadeIn();
-                    //         plot.fadeIn();
-                    //         $("#refresh_plot").fadeIn();
-                    //     });
-                    // }, 10000);
+
                     $(document).on("click", "#refresh_plot", function (e) {
                         plot.fadeOut();
                         title_div.fadeOut();
@@ -466,7 +458,7 @@ $(document).ready(function () {
 
                     const idx = getUrlParameter('id');
                     if (idx) {
-                        console.log('showing');
+
                         $('#top-progress').slideDown(1000);
 
                         socket.emit('freetext_trials', {'review_id': idx});
@@ -475,7 +467,7 @@ $(document).ready(function () {
             }
         });
         socket.on('search_update', function (msg) {
-            console.log(msg);
+
             $("#progress_txt").text(msg['msg']);
             if (msg['msg'] === 'complete') {
                 $(".progress-div").attr('style', 'display:none;');
@@ -483,11 +475,9 @@ $(document).ready(function () {
         });
         socket.on('search_res', function (msg) {
             $("#progress_txt").text(msg['msg']);
-            console.log(msg['msg']);
+
         });
-        socket.on('test', function (msg) {
-            console.log(msg['msg']);
-        });
+
         socket.on('docsim_update', function (msg) {
             if (!$(".progress_basicbot").is(":visible")) {
                 $(".progress_basicbot").slideDown(1000);
@@ -501,7 +491,7 @@ $(document).ready(function () {
                 });
                 $(".progress_basicbot").delay(1000).slideUp(2000);
             }
-            console.log(msg['msg']);
+
         });
         socket.on('crossrefbot_update', function (msg) {
             if (!$(".progress_crossrefbot").is(":visible")) {
@@ -516,10 +506,10 @@ $(document).ready(function () {
                 });
                 $(".progress_crossrefbot").delay(1000).slideUp(2000);
             }
-            console.log(msg['msg']);
+
         });
         socket.on('cochranebot_update', function (msg) {
-            console.log(msg);
+
             if (!$(".progress_cochranebot").is(":visible")) {
                 $(".progress_cochranebot").slideDown(1000);
             }
@@ -539,7 +529,7 @@ $(document).ready(function () {
                 }
                 $(".progress_cochranebot").delay(1000).slideUp(2000);
             }
-            console.log(msg['msg']);
+
         });
         socket.on('basicbot2_update', function (msg) {
             if (!$(".progress_basicbot2").is(":visible")) {
@@ -554,10 +544,9 @@ $(document).ready(function () {
                 });
                 $(".progress_basicbot2").delay(1000).slideUp(2000);
             }
-            console.log(msg['msg']);
+
         });
         socket.on('new_page', function (msg) {
-            // console.log(msg['data']);
             // todo replace this with something faster and more scalable
             $('.pg_content').html(msg['data']);
         });
@@ -574,7 +563,6 @@ $(document).ready(function () {
             }
         };
         var upvote_callback = function (data) {
-            console.log('voted ajax');
             $.ajax({
                 url: '/vote',
                 type: 'post',
@@ -607,7 +595,6 @@ $(document).ready(function () {
         });
 
         function move_rel_incl(nct_id) {
-            console.log('move_rel_incl');
             disable_elements();
             var panel = $('#panel_' + nct_id);
             var category = 'incl';
@@ -615,8 +602,7 @@ $(document).ready(function () {
                 panel.fadeOut("slow", function () {
                     panel.remove();
                     var result = JSON.parse(data);
-                    // $("#accordion-incl").fadeOut('slow');
-                    // reload_trials('incl');
+
                     socket.emit('refresh_trials', {
                         'review_id': getUrlParameter('searchterm'),
                         'type': 'incl',
@@ -638,7 +624,6 @@ $(document).ready(function () {
             move_rel_incl(nct_id);
         });
         $(document).on("click", ".rec_rel_incl", function (e) {
-            console.log('rec rel incl');
             var nct_id = e.target.id.substring(0, 11);
             if (window.location.pathname === '/blank') {
                 submitTrial(nct_id, 'included', true, function (data) {
@@ -677,39 +662,31 @@ $(document).ready(function () {
                     var modal = $("#myModal");
                     modal.find('.modal-body p').text(data2['responseText']);
                     modal.modal();
-                },
-                success: function (data) {
-                    console.log(data);
                 }
             });
         });
 
         function move_incl_rel(nct_id) {
-            console.log('move_incl_rel');
             disable_elements();
             var category = 'incl';
             var panel = $('#panel_' + nct_id);
             included_relevant(nct_id, function (data) {
                 if ($("#accordion-incl > .panel").length === 1) {
-                    // $("#accordion-incl").fadeOut('1000', function () {
-                    console.log(
-                        'emitting'
-                    );
+
                     socket.emit('refresh_trials', {
                         'review_id': getUrlParameter('searchterm'),
                         'type': 'incl',
                         'sort': 'net_upvotes',
                         'plot': false
-                        // });
                     });
                 } else {
                     panel.fadeOut("slow", function () {
                         panel.remove();
-                        // refresh_dashboard();
+
                     });
                 }
                 var result = JSON.parse(data);
-                // $("#accordion-rel").fadeOut('slow');
+
                 socket.emit('refresh_trials', {
                     'review_id': getUrlParameter('searchterm'),
                     'type': 'rel',
@@ -750,9 +727,6 @@ $(document).ready(function () {
             } else {
                 side = 'rel'
             }
-            console.log(side);
-            console.log('click');
-            console.log(order);
             socket.emit('refresh_trials', {
                 'review_id': getUrlParameter('searchterm'),
                 'type': side,
@@ -761,7 +735,6 @@ $(document).ready(function () {
             });
         });
         $(document).on("click", "#cmp_btn", function (e) {
-            console.log('click calc!');
             $("#completeness_val").css('visibility', 'visible');
             $("#cmp_btn").css('visibility', 'hidden');
             $("#reset").css('visibility', 'visible');
@@ -789,7 +762,6 @@ $(document).ready(function () {
                     $(".btn-incl-cmp").val('False');
                     $(".btn-incl-cmp").html('This list is incomplete');
                 } else {
-                    console.log('complete is not true');
                     $('.rel_incl').css('visibility', 'visible');
                     $(".btn-incl-cmp").val('True');
                     $(".btn-incl-cmp").html('This list is complete');
@@ -802,7 +774,6 @@ $(document).ready(function () {
         });
 
         function disable_elements() {
-            console.log('disabling');
             $(".nct-submit").attr('disabled', true);
             $(".upvote").attr('disabled', true);
             $(".downvote").attr('disabled', true);
@@ -812,7 +783,6 @@ $(document).ready(function () {
         }
 
         function enable_elements() {
-            console.log('emabling');
             $(".nct-submit").attr('disabled', false);
             $(".upvote").attr('disabled', false);
             $(".downvote").attr('disabled', false);
@@ -822,14 +792,14 @@ $(document).ready(function () {
         }
 
         $(document).on("click", ".nct-submit", function (e) {
-            console.log('clicked +');
-            var re_nct = /(NCT|nct)[0-9]{8}/;
+            var re_nct = new RegExp('^(NCT|nct)[0-9]{8}$');
             var category = e.target.name;
             var nct_id = $('#' + category + '-id').val().trim();
+            console.log(re_nct.test(nct_id))
 
             if (re_nct.test(nct_id)) {
                 var accordion = $('#accordion-' + category);
-                // disable_elements(); // todo: renable
+                disable_elements(); // todo: renable
                 submitTrial(nct_id, (category.indexOf('incl') > -1 ? 'included' : 'relevant'), window.location.pathname === '/blank', function (data) {
                     var result = JSON.parse(data);
                     if (result['success'] == true) {
@@ -840,7 +810,7 @@ $(document).ready(function () {
                             enable_elements();
                         });
                         $('#accordion-' + category).prepend('');
-                        // reload_trials(category);
+
                         socket.emit('refresh_trials', {
                             'ftext': window.location.pathname === '/blank',
                             'review_id': getUrlParameter('searchterm') || getUrlParameter('id'),
@@ -848,13 +818,12 @@ $(document).ready(function () {
                             'plot': true
                         });
 
-                        if (category.indexOf('incl') > -1 && window.location.pathname === '/blank') {
+                        if (category.indexOf('incl') > -1 && window.location.pathname !== '/blank') {
                             socket.emit('trigger_basicbot2', {
                                 'review_id': getUrlParameter('searchterm')
                             });
                         }
                     } else {
-                        console.log(result);
                         var to_move = $("#panel_" + nct_id);
                         to_move.parent().prepend(to_move);
                         if (to_move.is(":hidden")) {
