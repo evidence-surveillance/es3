@@ -656,6 +656,8 @@ def related_reviews(review_id):
 
 def related_reviews_from_trials(nct_ids):
     """  get a list of review PMIDs that share trials with the specified review PMID, ordered by # of shared trials  """
+    if not nct_ids:
+        return []
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(

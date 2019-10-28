@@ -1,6 +1,8 @@
 $(document).ready(function () {
         var socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);
 
+        let abstractRelatedReviews = '';
+
         function setPubDate() {
             var pub_year = ($("#pub_date").html());
             pub_date = new Date(pub_year, 1, 1);
@@ -120,7 +122,7 @@ $(document).ready(function () {
                 var max_radii = Math.max(...radii);
 
                 // Review publish date
-                var pub_date =Date.parse($('#pub_date').html()) ||  Date.now();
+                var pub_date = Date.parse($('#pub_date').html()) || Date.now();
 
                 // Domain and range
                 var y_max = Math.max(...yy);
@@ -251,8 +253,18 @@ $(document).ready(function () {
                     var replacement = $(node).filter('#accordion-rel');
                     $("#accordion-rel").html(replacement.html());
                 }
-                $("#related-reviews").html(msg['related_reviews']);
+
+            }
+            if (msg['section'] === 'related_reviews') {
+                $("#related-reviews").html(msg['data']);
                 $("#related-reviews").slideDown(1000);
+                if (window.location.pathname === '/blank') {
+                    $('#related-sort').removeClass('hidden');
+                    abstractRelatedReviews = $($.parseHTML(msg['data'])).filter('#related_review_items');
+                }
+            }
+            if (msg['section'] === 'related_reviews_update') {
+                $("#related_review_items").html(msg['data']);
             }
             if (msg['section'] === 'rel_trials') {
                 var rel_container = $("#rel_trials_container");
@@ -287,13 +299,6 @@ $(document).ready(function () {
             if (msg['section'] === 'incl_trials') {
                 var node = $.parseHTML(msg['data']);
                 var replacement = $(node).filter('#accordion-incl');
-                if (window.location.pathname === '/blank') {
-                    replacement.children().each(function (_, nct) {
-                        var nct_id = $(nct).attr('id').substring(6);
-
-                        $(`#${nct_id}_movincl`).css('visibility', 'hidden');
-                    });
-                }
 
 
                 var incl_container = $("#incl_trials_container");
@@ -321,6 +326,22 @@ $(document).ready(function () {
                 });
                 $('.incl').removeClass('active');
                 $("#" + msg['sort'] + '.incl').addClass('active');
+
+
+                if (window.location.pathname === '/blank') {
+                    replacement.children().each(function (_, nct) {
+                        var nct_id = $(nct).attr('id').substring(6);
+
+                        $(`#${nct_id}_movincl`).css('visibility', 'hidden');
+                    });
+
+                    if ($('#rel-sort-trials').prop('checked')) {
+                        console.log($('#accordion-incl .panel').toArray().map(d => d.id.substring(6)));
+                        socket.emit('refresh_related', {
+                            trials: $('#accordion-incl .panel').toArray().map(d => d.id.substring(6))
+                        });
+                    }
+                }
             }
             if (msg['section'] === 'no_results') {
                 $("#review-data-container").html(msg['data']);
@@ -431,6 +452,18 @@ $(document).ready(function () {
             if (window.location.pathname === '/blank') {
                 $(document).ready(function () {
 
+
+                    $(document).on('change', '#related-sort input', e => {
+                        const idx = $(e.target).attr('id');
+                        if (idx === 'rel-sort-abstract') {
+                            $("#related_review_items").html(abstractRelatedReviews);
+                        } else {
+                            console.log($('#accordion-incl .panel').toArray().map(d => d.id.substring(6)));
+                            socket.emit('refresh_related', {
+                                trials: $('#accordion-incl .panel').toArray().map(d => d.id.substring(6))
+                            });
+                        }
+                    });
 
                     $(document).on("click", "#submit_text", function (e) {
                         var text = $("#free_text").val();
@@ -865,8 +898,16 @@ $(document).ready(function () {
 
             if (window.location.pathname === '/blank') {
                 removeTrial(nct_id, getUrlParameter('id'));
-                $(`#${nct_id}_moveincl`).css('visibility', 'visible');
+                $(`#${nct_id}_movincl`).css('visibility', 'visible');
                 $(e.target).parents('.panel').remove();
+
+                if ($('#rel-sort-trials').prop('checked')) {
+                    console.log($('#accordion-incl .panel').toArray().map(d => d.id.substring(6)));
+                    socket.emit('refresh_related', {
+                        trials: $('#accordion-incl .panel').toArray().map(d => d.id.substring(6))
+                    });
+                }
+
                 return
             }
             move_incl_rel(nct_id)

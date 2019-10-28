@@ -49,7 +49,7 @@
 
 
 
-    <div class="container pg_content">
+    <div class="container pg_content" style="margin-bottom: 1rem">
         <h1 class="display-3 text-left">Freetext Reviews</h1>
         <hr>
 
@@ -61,7 +61,7 @@
                 {% if ftext_reviews|length %}
                     {% for review in ftext_reviews %}
                         <li class="list-group-item">
-                            <a href="/blank?id={{ review.review_id }}">{{ review.abstract }}</a>
+                            <a href="/blank?id={{ review.review_id }}">{{ ''.join(''.join(review.abstract.partition('.')[:2]).partition('?')[:2]) }}</a>
                             <br>
                             <small><em>{{ review.dated_added.strftime('%Y') }}</em></small>
 

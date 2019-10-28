@@ -62,6 +62,16 @@ def get_plot():
                'ContentType': 'application/json'}
 
 
+@socketio.on('refresh_related')
+def refresh_related(data):
+    trials = data['trials']
+    related = crud.related_reviews_from_trials(trials)
+
+    socketio.emit('page_content', {
+        'section': 'related_reviews_update',
+        'data': render_template('related_review_item.html', related_reviews=related)
+    }, room=request.sid)
+
 @socketio.on('freetext_trials')
 def freetext_trials(data):
     freetext = crud.get_ftext_review(data['review_id'])['abstract']
@@ -83,10 +93,15 @@ def freetext_trials(data):
                   {'section': 'plot', 'data': formatted, 'page': 'blank',
                    }, room=request.sid)
 
-    emit('page_content',
-         {'section': 'recommended_trials', 'data': render_template('recommended_trials.html', reg_trials=trials),
-          'related_reviews': render_template('related_reviews.html',
-                                             related_reviews=related)}, room=request.sid)
+    emit('page_content', {
+        'section': 'recommended_trials',
+        'data': render_template('recommended_trials.html', reg_trials=trials),
+    }, room=request.sid)
+
+    emit('page_content', {
+        'section': 'related_reviews',
+        'data': render_template('related_reviews.html', related_reviews=related)
+    }, room=request.sid)
 
     id = data['review_id']
     trials = crud.get_ftext_trials_fast(id)
