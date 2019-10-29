@@ -113,6 +113,7 @@ gen
 app/static/js/img/
 config.py
 models
+log
 matfac/.gitignore
 matfac/Results
 matfac/LICENSE
@@ -127,4 +128,9 @@ nct_xml/
 # more stuff
 run-dev.py
 trial2rev
+
+# keep these
+!.gitkeep
+
+
 
