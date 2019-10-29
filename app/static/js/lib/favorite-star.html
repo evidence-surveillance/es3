@@ -126,6 +126,6 @@ Favorite Button/Star
         }
       }
     }
-    customElements.define('favorite-star', proto,proto.createdCallback());
+    return document.registerElement('favorite-star', {prototype: proto});
   })();
 </script>
