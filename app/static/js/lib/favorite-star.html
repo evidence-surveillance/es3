@@ -1,0 +1,131 @@
+<!--
+Favorite Button/Star
+@element favorite-star
+@demo https://argelius.github.io/favorite-star/index.html
+-->
+<template>
+  <style>
+    .favorite-star-character {
+      color: #ccd6dd;
+      cursor: pointer;
+      display: inline-block;
+      transform: scale3d(1.0, 1.0, 1.0);
+      -webkit-transform: scale3d(1.0, 1.0, 1.0);
+      -moz-transform: scale3d(1.0, 1.0, 1.0);
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    @-webkit-keyframes favorite-star-bounce {
+      0% {
+        -webkit-transform: scale3d(1.0, 1.0, 1.0);
+      }
+      50% {
+        -webkit-transform: scale3d(1.4, 1.4, 1.0);
+      }
+      to {
+        -webkit-transform: scale3d(1.0, 1.0, 1.0);
+      }
+    }
+    @-moz-keyframes favorite-star-bounce {
+      0% {
+        -moz-transform: scale3d(1.0, 1.0, 1.0);
+      }
+      50% {
+        -moz-transform: scale3d(1.4, 1.4, 1.0);
+      }
+      to {
+        -moz-transform: scale3d(1.0, 1.0, 1.0);
+      }
+    }
+    @keyframes favorite-star-bounce {
+      0% {
+        transform: scale3d(1.0, 1.0, 1.0);
+      }
+      50% {
+        transform: scale3d(1.4, 1.4, 1.0);
+      }
+      100% {
+        transform: scale3d(1.0, 1.0, 1.0);
+      }
+    }
+    .favorite-star-character[active] {
+      color: #ffac33;
+      -webkit-animation: favorite-star-bounce 0.3s ease-in-out;
+      -moz-animation: favorite-star-bounce 0.3s ease-in-out;
+      animation: favorite-star-bounce 0.3s ease-in-out;
+    }
+    .favorite-star-character[hover] {
+      color: #ffac33;
+    }
+  </style>
+  <span class="favorite-star-character">&#x2605;</span>
+</template>
+<script>
+  window.FavoriteStarElement = (function() {
+    var currentScript = document._currentScript || document.currentScript,
+      doc = currentScript.ownerDocument,
+      proto = Object.create(HTMLElement.prototype);
+    proto.createdCallback = function() {
+      var template = doc.querySelector('template'),
+        clone = document.importNode(template.content, true);
+      this.shadowRoot = this.createShadowRoot();
+      this.shadowRoot.appendChild(clone);
+      this.element = this.shadowRoot.querySelector('.favorite-star-character');
+      this.boundOnClick = this.onClick.bind(this);
+      this.boundOnMouseover = this.onMouseover.bind(this);
+      this.boundOnMouseout = this.onMouseout.bind(this);
+      if (this.hasAttribute('active')) {
+        this.element.setAttribute('active', '');
+      }
+    };
+    proto.toggle = function() {
+      if (this.hasAttribute('active')) {
+        this.removeAttribute('active');
+      }
+      else {
+        this.setAttribute('active', '');
+      }
+    }
+    proto.onClick = function() {
+      this.toggle();
+    }
+    proto.onMouseover = function() {
+      var el = this.element;
+      if (!el.hasAttribute('active')) {
+        el.setAttribute('hover', '');
+      }
+    }
+    proto.onMouseout = function() {
+      var el = this.element;
+      el.removeAttribute('hover');
+    }
+    proto.attachedCallback = function() {
+      var el = this.element;
+      el.addEventListener('click', this.boundOnClick);
+      el.addEventListener('mouseout', this.boundOnMouseout);
+      el.addEventListener('mouseover', this.boundOnMouseover);
+    }
+    proto.detachedCallback = function() {
+      var el = this.element;
+      el.removeEventListener('click', this.boundOnClick);
+      el.removeEventListener('mouseout', this.boundOnMouseout);
+      el.removeEventListener('mouseover', this.boundOnMouseover);
+    }
+    proto.attributeChangedCallback = function(attr) {
+      if (attr === 'active') {
+        var el = this.element;
+        if (this.hasAttribute('active')) {
+          el.setAttribute('active', '');
+        }
+        else {
+          el.removeAttribute('active');
+          el.removeAttribute('hover');
+        }
+      }
+    }
+    customElements.define('favorite-star', proto,proto.createdCallback());
+  })();
+</script>
