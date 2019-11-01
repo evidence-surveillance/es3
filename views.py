@@ -12,8 +12,8 @@ import dblib
 import plot
 import crud
 from app import app, mail, socketio, cache
-from forms import EmailPasswordForm, NewUserForm, ChangePasswordForm, ForgotPasswordForm, PasswordForm
-from user import User
+from app.forms import EmailPasswordForm, NewUserForm, ChangePasswordForm, ForgotPasswordForm, PasswordForm
+from app.user import User
 from celery import chord
 import random
 import utils
@@ -235,7 +235,6 @@ def search(json):
         article = ec.efetch(db='pubmed', id=id)
         found_review = None
         for art in article:
-            print art
             if art and str(art.pmid) == id:
                 found_review = art
                 break
@@ -264,17 +263,17 @@ def search(json):
                 chord((bot.check_citations.s(id, sess_id=request.sid)),
                       bot.basicbot2.si(review_id=id, sess_id=request.sid)).delay()
         else:
-            print 'no result'
+            print('no result')
             emit('page_content', {'section': 'no_results', 'data': render_template('noresults.html', id=id)},
                  room=request.sid)
             return
     # if there IS a match in our DB
     if found:
-        print 'emitting found review'
+        print('emitting found review')
         eventlet.sleep(0)
         emit('search_update', {'msg': 'Found review in our database! Retrieving data..'}, room=request.sid)
         eventlet.sleep(0)
-        print 'emitting review content'
+        print('emitting review content')
         emit('page_content', {'data': render_template('review_data.html', review=review,
                                                       starred=crud.is_starred(review['review_id'],
                                                                               current_user.db_id) if current_user.is_authenticated else False),

@@ -1,6 +1,6 @@
 import webAPIs
 import glob
-from urllib2 import urlopen
+from urllib.request import urlopen
 import zipfile
 import os
 import httplib

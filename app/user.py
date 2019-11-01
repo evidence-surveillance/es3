@@ -73,7 +73,7 @@ class User(UserMixin):
         """
         password = str(self.password)
         salt = self.salt
-        print hashlib.sha256(salt.encode() + str(user_password).encode()).hexdigest()
+        print(hashlib.sha256(salt.encode() + str(user_password).encode()).hexdigest())
         return password == hashlib.sha256(salt.encode() + str(user_password).encode()).hexdigest()
 
     @property
@@ -135,7 +135,7 @@ class User(UserMixin):
         cursor = conn.cursor()
         cursor.execute("select user_name from users;")
         usrs = cursor.fetchall()
-        objs = map(lambda u: cls.get(u),list(zip(*usrs)[0]))
+        objs = map(lambda u: cls.get(u), [user[0] for user in usrs])
         return objs
 
 

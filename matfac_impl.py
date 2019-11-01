@@ -70,9 +70,9 @@ def _matfac_results(date):
 
 
 def _matfac_trials():
-    print utils.most_recent_matfac()
-    print utils.most_recent_matfac_pmids()
-    print utils.most_recent_matfac_nctids()
+    print(utils.most_recent_matfac())
+    print(utils.most_recent_matfac_pmids())
+    print(utils.most_recent_matfac_nctids())
     remote_tasks.remove_bot_votes(11)
     results = np.load(utils.most_recent_matfac())
     pmid_arr = np.load(utils.most_recent_matfac_pmids())
@@ -85,12 +85,12 @@ def _matfac_trials():
         incl = cur.fetchall()
         if not incl:
             continue
-        incl = list(zip(*incl)[0])
+        incl = [nct[0] for nct in incl]
         if len(incl) > 2:
             sorted = col.argsort()[::-1][:100]
             top_trials = nct_ids[sorted].flatten()
             if len(set(top_trials) & set(incl)) >= len(incl) / 2:
                 for i, trial in enumerate(set(top_trials[:100]) - set(incl)):
-                    print pmid_arr[c], trial
+                    print(pmid_arr[c], trial)
                     crud.review_trial(pmid_arr[c], trial, False, 'relevant', 'matfacbot', 11)
     con.close()

@@ -27,10 +27,10 @@ def create_con(VERBOSE):
         retries -= 1
         try:
             con = psycopg2.connect(database=DB_NAME, user=USER_DB, host=DB_HOST, password=USER_DB_PASS, port=DB_PORT)
-        except (psycopg2.DatabaseError, psycopg2.OperationalError), exc:
+        except (psycopg2.DatabaseError, psycopg2.OperationalError) as exc:
             if VERBOSE:
-                print 'Error connecting to database. Trying again.'
-                print '  Error %s' % exc
+                print('Error connecting to database. Trying again.')
+                print('  Error %s' % exc)
             if exc.args != (u'timeout expired\n',):
                 raise
             if retries <= 0:

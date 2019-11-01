@@ -119,7 +119,7 @@ class TestCrud(unittest.TestCase):
         cur = conn.cursor()
         cur.execute("SELECT nct_id from tregistry_entries where nct_id in %s;",(tuple(nct_ids),))
         res = cur.fetchall()
-        self.assertEqual(list(zip(*res)[0]), nct_ids)
+        self.assertEqual([nct[0] for nct in res], nct_ids)
         conn.close()
 
     def test_pulication_trial(self):

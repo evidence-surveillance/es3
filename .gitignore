@@ -111,7 +111,6 @@ gen
 app/static/js/img/
 config.py
 models
-log
 matfac/.gitignore
 matfac/Results
 matfac/LICENSE

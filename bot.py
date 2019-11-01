@@ -16,17 +16,13 @@ import eventlet
 import re
 import bs4
 import collections
-import sys
 from eutils import Client
 import eutils
 import utils
-reload(sys)
 from celery.task.control import inspect, revoke
 import time
 import lxml
 import ecitmatch_tools
-
-sys.setdefaultencoding("utf8")
 
 eutils_key = config.EUTILS_KEY
 
@@ -49,9 +45,10 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                 paset = ec.efetch(db='pubmed', id=review_id)
                 break
             except (
-            eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError, requests.exceptions.SSLError,
-            requests.exceptions.ConnectionError) as e:
-                print e
+                    eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
+                    requests.exceptions.SSLError,
+                    requests.exceptions.ConnectionError) as e:
+                print(e)
                 time.sleep(5)
         pa = iter(paset).next()
         if hasattr(pa, 'doi'):
@@ -67,7 +64,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
     except requests.HTTPError as e:
         if sess_id:
             socketio.emit('crossrefbot_update', {'msg': 'No trials found. Crossrefbot complete'}, room=sess_id)
-        print e
+        print(e)
         return
     if resp['status'] == 'ok':
         parsed = resp['message']
@@ -77,7 +74,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                                                                         'reference'])) + ' references found in crossref. trying to resolve these to PubMed articles...'},
                               room=sess_id)
                 eventlet.sleep(0)
-            print str(len(parsed['reference'])) + ' references found in crossref'
+            print(str(len(parsed['reference'])) + ' references found in crossref')
             to_resolve = []
             references = parsed['reference']
             dois = [doi["DOI"] for doi in references if 'DOI' in doi]
@@ -93,7 +90,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                         except (eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
                                 requests.exceptions.SSLError, requests.exceptions.ConnectionError,
                                 lxml.etree.XMLSyntaxError) as e:
-                            print e
+                            print(e)
                             time.sleep(5)
                     if esr.ids:
                         while True:
@@ -102,7 +99,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                                 break
                             except (eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
                                     requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
-                                print e
+                                print(e)
                                 time.sleep(5)
                         pa_iter = iter(paset)
                         while True:
@@ -114,7 +111,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                                 dois.remove(pma.doi)
                                 to_resolve.append(pma.pmid)
             remaining = [x for x in references if ('DOI' not in x or ('DOI' in x and x['DOI'] in dois)) and (
-                        'first-page' in x or 'author' in x or 'article-title' in x or 'volume' in x or 'journal-title' in x or 'year' in x)]
+                    'first-page' in x or 'author' in x or 'article-title' in x or 'volume' in x or 'journal-title' in x or 'year' in x)]
             if remaining:
                 citation_pmids = ecitmatch_tools.batch_pmids_for_citation(remaining, debug=False)
                 check_metadata = []
@@ -136,7 +133,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                             break
                         except (eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
                                 requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
-                            print  e
+                            print(e)
                             time.sleep(5)
                     pa_iter = iter(paset)
                     while True:
@@ -186,7 +183,7 @@ def check_citations(review_id, sess_id=None, review_doi=None):
             break
         except (eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError, requests.exceptions.SSLError,
                 requests.exceptions.ConnectionError) as e:
-            print e
+            print(e)
             time.sleep(5)
     a_iter = iter(articles)
     while True:
@@ -194,7 +191,7 @@ def check_citations(review_id, sess_id=None, review_doi=None):
             article = a_iter.next()
         except StopIteration:
             break
-        print '-----------------' + article.pmid + '-------------------------'
+        print('-----------------' + article.pmid + '-------------------------')
         if article.doi is not None:
             ids = check_trialpubs_nctids(article.pmid, article.doi, sess_id=sess_id)
         else:
@@ -217,7 +214,7 @@ def check_citations(review_id, sess_id=None, review_doi=None):
                         for nct in linked_ncts:
                             crud.review_trial(review_id, nct, False, 'included', user_id=9, nickname='crossrefbot')
             if ids.nctids:
-                print 'nct ids in crossref = ' + str(len(ids.nctids))
+                print('nct ids in crossref = ' + str(len(ids.nctids)))
                 if sess_id:
                     socketio.emit('crossrefbot_update',
                                   {'msg': str(len(ids.nctids)) + ' included trials were listed directly in crossref'},
@@ -252,14 +249,14 @@ def batch_doi2pmid(dois):
             else:
                 citations.append(cit)
         except Exception as e:
-            print e
+            print(e)
             continue
     parsed_citations = []
     for x in citations:
         try:
             cit = json.loads(x)
         except TypeError as e:
-            print e
+            print(e)
             continue
         parsed_cit = {}
         if 'page' in cit:
@@ -305,7 +302,7 @@ def basicbot2(review_id=None, sess_id=None):
                 (review_id,))
     trials = cur.fetchall()
     if len(trials) < 1:
-        print 'no trials for basicbot2'
+        print('no trials for basicbot2')
         conn.close()
         return False
     if trials:
@@ -320,7 +317,7 @@ def basicbot2(review_id=None, sess_id=None):
             socketio.emit('basicbot2_update', {'msg': 'triggering basicbot2'}, room=sess_id)
         tfidf_matrix = scipy.sparse.load_npz(utils.most_recent_tfidf())
         ids = np.load(utils.most_recent_tfidf_labels())
-        trials = list(zip(*trials)[0])
+        trials = [trial[0] for trial in trials]
         ix = np.isin(ids, trials)
         trial_indices = np.where(ix)[0]
         if sess_id:
@@ -342,6 +339,7 @@ def basicbot2(review_id=None, sess_id=None):
 
 @celery_inst.task()
 def docsim(review_id, sess_id=None):
+    print("REVIEW _ID - DOCSIM", review_id)
     """
     use document similarity to recommend trials based on similarity to title & abstract text of review
     @param review_id: PMID of review
@@ -391,6 +389,7 @@ def docsim(review_id, sess_id=None):
 
 @celery_inst.task()
 def docsim_freetext(document, sess_id=None):
+    print("DOCUMENT - DOCSIM FREETEXT", document)
     """
     use document similarity to recommend trials based on similarity to title & abstract text of review
     @param review_id: PMID of review
@@ -447,7 +446,8 @@ def cochrane_ongoing_excluded(doi, review_id, sess_id=None):
         socketio.sleep(0)
     base_url = "https://www.cochranelibrary.com/cdsr/doi/{}/references".format(doi)
     try:
-        r = requests.get(base_url,headers={'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36'})
+        r = requests.get(base_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36'})
     except requests.exceptions.TooManyRedirects:
         if sess_id:
             socketio.emit('cochranebot_update', {'msg': 'nothing found by cochranebot'}, room=sess_id)
@@ -486,7 +486,7 @@ def cochrane_ongoing_excluded(doi, review_id, sess_id=None):
             # if included by crossrefbot, move it
             if pmids:
                 count = crud.articles_with_nctids(pmids)
-                print 'cochrane excluded articles with links = ' + str(count)
+                print('cochrane excluded articles with links = ' + str(count))
                 if count and len(count) > 0:
                     for trialpub in count:
                         crud.review_publication(review_id, trialpub, 17)
@@ -500,7 +500,7 @@ def cochrane_ongoing_excluded(doi, review_id, sess_id=None):
                                                   linked_ncts)},
                                               room=sess_id)
             nct_ids = list(set(nct_ids))
-            print 'excluded: ' + ', '.join(nct_ids)
+            print('excluded: ' + ', '.join(nct_ids))
             for id in nct_ids:
                 # if included by crossrefbot, move it
                 crud.review_trial(review_id, id, False, 'relevant', 'cochranebot', 17, vote_type='down')
@@ -513,7 +513,7 @@ def cochrane_ongoing_excluded(doi, review_id, sess_id=None):
                     if sess_id:
                         socketio.emit('cochranebot_update', {'msg': 'found nct ID ' + relevant_nct[-1]}, room=sess_id)
             relevant_nct = list(set(relevant_nct))
-            print relevant_nct
+            print(relevant_nct)
             for nct in relevant_nct:
                 # TODO ensure that already included gets moved to relevant
                 crud.review_trial(review_id, nct, False, 'relevant', 'cochranebot', 17)
@@ -527,7 +527,7 @@ def cochrane_ongoing_excluded(doi, review_id, sess_id=None):
                         socketio.emit('cochranebot_update', {'msg': 'found nct ID ' + relevant_nct[-1]},
                                       room=sess_id)
             relevant_nct = list(set(relevant_nct))
-            print relevant_nct
+            print(relevant_nct)
             for nct in relevant_nct:
                 crud.review_trial(review_id, nct, False, 'relevant', 'cochranebot', 17)
         if not excluded_studies and not awaiting_studies and not ongoing_studies:
@@ -555,7 +555,8 @@ def cochranebot(doi, review_id, sess_id=None):
         socketio.sleep(0)
     base_url = "https://www.cochranelibrary.com/cdsr/doi/{}/references".format(doi)
     try:
-        r = requests.get(base_url, headers={'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36'})
+        r = requests.get(base_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36'})
     except requests.exceptions.TooManyRedirects:
         if sess_id:
             socketio.emit('cochranebot_update', {'msg': 'nothing found by cochranebot'}, room=sess_id)
@@ -597,7 +598,7 @@ def cochranebot(doi, review_id, sess_id=None):
                 socketio.sleep(0)
             if pmids:
                 count = crud.articles_with_nctids(pmids)
-                print 'cochrane included articles with links = ' + str(count)
+                print('cochrane included articles with links = ' + str(count))
                 if count and len(count) > 0:
                     for trialpub in count:
                         crud.review_publication(review_id, trialpub, 17)
@@ -611,7 +612,7 @@ def cochranebot(doi, review_id, sess_id=None):
                                                   linked_ncts)},
                                               room=sess_id)
             nct_ids = list(set(nct_ids))
-            print 'cochrane nct_ids ' + str(nct_ids)
+            print('cochrane nct_ids ' + str(nct_ids))
 
             for id in nct_ids:
                 crud.review_trial(review_id, id, False, 'included', 'cochranebot', 17)

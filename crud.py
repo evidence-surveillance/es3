@@ -4,7 +4,7 @@ import untangle
 from datetime import datetime
 import config
 import psycopg2.extras
-import httplib
+import http.client as httplib
 import utils
 import request_data
 from eutils import Client
@@ -34,12 +34,12 @@ def review_lock_status(review_id):
 def get_saved_reviews(user_id):
     """ Retrieve all saved reviews for user """
     conn = dblib.create_con(VERBOSE=True)
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute("SELECT review_id from user_reviews where user_id = %s;", (user_id,))
     res = cur.fetchall()
     if not res:
         return None
-    reviews = list(zip(*res)[0])
+    reviews = [review['review_id'] for review in res]
     return get_reviews_with_ids(reviews)
 
 
@@ -130,7 +130,7 @@ def remove_ftext_trial(review_id, nct_id):
         conn.commit()
         print('deleted', review_id, nct_id, 'link')
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
     conn.close()
 
@@ -152,7 +152,7 @@ def link_ftext_trial(review_id, nct_id):
         cur.execute(sql, (review_id, nct_id,))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
         if add_missing_trial(nct_id):
             cur.execute(sql, (review_id, nct_id,))
@@ -166,12 +166,12 @@ def get_locked():
     @return: list of locked reviews or None
     """
     conn = dblib.create_con(VERBOSE=True)
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(
         "SELECT review_id FROM systematic_reviews WHERE included_complete = TRUE;")
-    reviews = cur.fetchall()
+    reviews = [review['review_id'] for review in cur.fetchall()]
     conn.close()
-    return list(zip(*reviews)[0]) if reviews else None
+    return reviews or None
 
 
 def review_publication(review_id, publication_id, user_id):
@@ -190,7 +190,7 @@ def review_publication(review_id, publication_id, user_id):
             (review_id, publication_id, user_id))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
         ec = Client(api_key=eutils_key)
         article = ec.efetch(db='pubmed', id=publication_id)
@@ -250,7 +250,7 @@ def link_review_trial(review_id, nct_id, verified, relationship, nickname, user_
             (review_id, nct_id, verified, 0, 0, relationship, nickname, user_id))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
         if add_missing_trial(nct_id):
             cur.execute(
@@ -331,7 +331,7 @@ def publication_trial(publication_id, nct_id, user_id):
             (publication_id, nct_id, user_id))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
         add_missing_trial(nct_id)
         cur.execute(
@@ -490,7 +490,7 @@ def update_record(xml_file):
     try:
         obj = untangle.parse(xml_file)
     except Exception as e:
-        print e
+        print(e)
         return False
     result = {'condition': []}
     result['completion_date'] = None
@@ -623,21 +623,21 @@ def pubmedarticle_to_db(article, table):
 def articles_with_nctids(pmid_list):
     """ get subset of PMIDs in pmid_list that have links to ClinicalTrials.gov """
     conn = dblib.create_con(VERBOSE=True)
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute("select distinct(trialpub_id) from trialpubs_rtrial where trialpub_id in %s;", (tuple(pmid_list),))
-    matches = cur.fetchall()
+    matches = [match['trialpub_id'] for match in cur.fetchall()]
     conn.close()
-    return list(zip(*matches)[0]) if matches else None
+    return matches or None
 
 
 def linked_nctids(pmid):
     """ Get the linked NCTIDs for the specified PMID """
     conn = dblib.create_con(VERBOSE=True)
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute("select nct_id from trialpubs_rtrial where trialpub_id = %s;", (pmid,))
-    ids = cur.fetchall()
+    ids = [idx['nct_id'] for idx in cur.fetchall()]
     conn.close()
-    return list(zip(*ids)[0]) if ids else None
+    return ids or None
 
 
 def related_reviews(review_id):
