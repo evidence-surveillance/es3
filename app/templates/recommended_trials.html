@@ -136,8 +136,10 @@
 </div>
 <div class="row">
     <div class="col-2 col-xs-12">
+        {% if reg_trials | length %}
         <button type="button" id="load_more_rel" class="btn  btn-primary btn-block " value="False">More trials
         </button>
+        {% endif %}
     </div>
 </div>
 

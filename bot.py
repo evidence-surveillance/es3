@@ -49,8 +49,8 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                 paset = ec.efetch(db='pubmed', id=review_id)
                 break
             except (
-            eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError, requests.exceptions.SSLError,
-            requests.exceptions.ConnectionError) as e:
+                    eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError, requests.exceptions.SSLError,
+                    requests.exceptions.ConnectionError) as e:
                 print e
                 time.sleep(5)
         pa = iter(paset).next()
@@ -114,7 +114,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                                 dois.remove(pma.doi)
                                 to_resolve.append(pma.pmid)
             remaining = [x for x in references if ('DOI' not in x or ('DOI' in x and x['DOI'] in dois)) and (
-                        'first-page' in x or 'author' in x or 'article-title' in x or 'volume' in x or 'journal-title' in x or 'year' in x)]
+                    'first-page' in x or 'author' in x or 'article-title' in x or 'volume' in x or 'journal-title' in x or 'year' in x)]
             if remaining:
                 citation_pmids = ecitmatch_tools.batch_pmids_for_citation(remaining, debug=False)
                 check_metadata = []
@@ -341,6 +341,53 @@ def basicbot2(review_id=None, sess_id=None):
 
 
 @celery_inst.task()
+def basicbot2_freetext(review_id=None, sess_id=None):
+    """
+    use document similarity to recommend trials for a review based on similarity to current included trials
+    @param review_id: PMID of review
+    @param sess_id: session ID if transitting progress via websocket
+    """
+    if sess_id:
+        socketio = SocketIO(message_queue='amqp://localhost')
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor()
+    cur.execute("SELECT nct_id FROM freetext_review_rtrial WHERE review_id = %s;",
+                (review_id,))
+    trials = cur.fetchall()
+    conn.close()
+    if len(trials) < 1:
+        print 'no trials for basicbot2'
+        conn.close()
+
+        return []
+    if trials:
+        if sess_id:
+            socketio.emit('basicbot2_update', {'msg': 'triggering basicbot2'}, room=sess_id)
+        tfidf_matrix = scipy.sparse.load_npz(utils.most_recent_tfidf())
+        ids = np.load(utils.most_recent_tfidf_labels())
+        trials = list(zip(*trials)[0])
+        ix = np.isin(ids, trials)
+        trial_indices = np.where(ix)[0]
+        if sess_id:
+            socketio.emit('basicbot2_update', {'msg': 'vectorizing stuff'}, room=sess_id)
+        trial_vecs = tfidf_matrix[trial_indices, :]
+        cos_sim = linear_kernel(trial_vecs, tfidf_matrix)
+        if sess_id:
+            socketio.emit('basicbot2_update', {'msg': 'calculating cosine similarity'}, room=sess_id)
+        final = cos_sim.sum(axis=0)
+        top = np.argpartition(final, -100)[-100:]
+        top_ranked = set(ids[np.array(top)]) - set(ids[trial_indices])
+
+        return list(top_ranked)
+        # if sess_id:
+        #     socketio.emit('basicbot2_update', {'msg': 'inserting basicbot 2 predictions'}, room=sess_id)
+        # for nct_id in top_ranked:
+        #     crud.review_trial(review_id, nct_id, False, 'relevant', 'basicbot2', 10)
+        # if sess_id:
+        #     socketio.emit('basicbot2_update', {'msg': 'basicbot2 complete!'}, room=sess_id)
+
+
+@celery_inst.task()
 def docsim(review_id, sess_id=None):
     """
     use document similarity to recommend trials based on similarity to title & abstract text of review
@@ -368,6 +415,10 @@ def docsim(review_id, sess_id=None):
                    feature_name in trials_vectorizer.vocabulary_.keys()]
     tf_indices = [tf_transformer.vocabulary_[feature_name] for feature_name in trials_vectorizer.get_feature_names() if
                   feature_name in tf_transformer.vocabulary_.keys()]
+
+    if not idf_indices:
+        return []
+
     final_idf = trials_vectorizer.idf_[np.array(idf_indices)]
     final_tf = np.array(normalised_tf_vector.toarray()[0])[np.array(tf_indices)]
     review_tfidf = np.asmatrix(final_tf * final_idf)
@@ -403,10 +454,15 @@ def docsim_freetext(document, sess_id=None):
     if not document:
         if sess_id:
             socketio.emit('docsim_update', {'msg': 'Unable to make predictions. Basicbot complete'}, room=sess_id)
-        return
+
+        return []
     tf_transformer = TfidfVectorizer(use_idf=False)
     trials_vectorizer = pickle.load(open(utils.most_recent_tfidf_vec()))
-    normalised_tf_vector = tf_transformer.fit_transform([document])
+    try:
+        normalised_tf_vector = tf_transformer.fit_transform([document])
+    except ValueError as e:
+        print(e)
+        return []
     if sess_id:
         socketio.emit('docsim_update', {'msg': 'vectorising stuff...'}, room=sess_id)
         eventlet.sleep(0)
@@ -415,6 +471,10 @@ def docsim_freetext(document, sess_id=None):
                    feature_name in trials_vectorizer.vocabulary_.keys()]
     tf_indices = [tf_transformer.vocabulary_[feature_name] for feature_name in trials_vectorizer.get_feature_names() if
                   feature_name in tf_transformer.vocabulary_.keys()]
+
+    if not idf_indices:
+        return []
+
     final_idf = trials_vectorizer.idf_[np.array(idf_indices)]
     final_tf = np.array(normalised_tf_vector.toarray()[0])[np.array(tf_indices)]
     review_tfidf = np.asmatrix(final_tf * final_idf)
@@ -429,6 +489,7 @@ def docsim_freetext(document, sess_id=None):
     if sess_id:
         # socketio.emit('docsim_update', {'msg': 'basicbot complete!'}, room=sess_id)
         eventlet.sleep(0)
+
     return list(to_insert)
 
 

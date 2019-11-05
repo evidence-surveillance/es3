@@ -21,6 +21,7 @@ import request_data
 import eventlet
 from flask_socketio import emit
 from eutils import Client
+from collections import OrderedDict
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -72,14 +73,28 @@ def refresh_related(data):
         'data': render_template('related_review_item.html', related_reviews=related)
     }, room=request.sid)
 
+
 @socketio.on('freetext_trials')
 def freetext_trials(data):
-    freetext = crud.get_ftext_review(data['review_id'])['abstract']
-    emit('blank_update', {'msg': 'calculating similar trials'}, room=request.sid)
-    trial_ids = bot.docsim_freetext(freetext)
-    emit('blank_update', {'msg': 'rendering similar trials'}, room=request.sid)
-    related = crud.related_reviews_from_trials(trial_ids)
-    trials = crud.get_trials_by_id(trial_ids)
+    freetext = ''
+    if 'abstract' in data:
+        freetext = data['abstract']
+        crud.update_ftext_review(data['review_id'], current_user.db_id, freetext)
+    else:
+        freetext = crud.get_ftext_review(data['review_id'])['abstract']
+
+    emit('blank_update', {'msg': 'finding similar trials'}, room=request.sid)
+    trial_ids = list(
+        OrderedDict.fromkeys(
+            bot.basicbot2_freetext(data['review_id']) + bot.docsim_freetext(freetext)
+        ).keys()
+    )
+
+
+    emit('blank_update', {'msg': 'retrieving related reviews'}, room=request.sid)
+    related = crud.related_reviews_from_trials(trial_ids, True)
+    trials = crud.get_trials_by_id(trial_ids, True) if trial_ids else []
+
     plot_trials = []
     for t in trials:
         t = dict(t)
@@ -87,12 +102,13 @@ def freetext_trials(data):
         t['verified'] = False
         t['relationship'] = 'relevant'
         plot_trials.append(t)
-    emit('blank_update', {'msg': 'predictions complete'}, room=request.sid)
+    emit('blank_update', {'msg': 'loading plots'}, room=request.sid)
     formatted = utils.trials_to_plotdata(plot_trials[:20])
     socketio.emit('page_content',
                   {'section': 'plot', 'data': formatted, 'page': 'blank',
                    }, room=request.sid)
 
+    emit('blank_update', {'msg': 'rendering page'}, room=request.sid)
     emit('page_content', {
         'section': 'recommended_trials',
         'data': render_template('recommended_trials.html', reg_trials=trials),
@@ -111,6 +127,7 @@ def freetext_trials(data):
           'data': render_template('ftext_incl_trials.html', reg_trials=trials['reg_trials'])
           }, room=request.sid)
 
+    emit('blank_update', {'msg': 'loading complete'}, room=request.sid)
     # plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
     #                        sess_id=request.sid)
 
@@ -235,7 +252,8 @@ def search(json):
         article = ec.efetch(db='pubmed', id=id)
         found_review = None
         for art in article:
-            print art
+            print
+            art
             if art and str(art.pmid) == id:
                 found_review = art
                 break
@@ -264,17 +282,20 @@ def search(json):
                 chord((bot.check_citations.s(id, sess_id=request.sid)),
                       bot.basicbot2.si(review_id=id, sess_id=request.sid)).delay()
         else:
-            print 'no result'
+            print
+            'no result'
             emit('page_content', {'section': 'no_results', 'data': render_template('noresults.html', id=id)},
                  room=request.sid)
             return
     # if there IS a match in our DB
     if found:
-        print 'emitting found review'
+        print
+        'emitting found review'
         eventlet.sleep(0)
         emit('search_update', {'msg': 'Found review in our database! Retrieving data..'}, room=request.sid)
         eventlet.sleep(0)
-        print 'emitting review content'
+        print
+        'emitting review content'
         emit('page_content', {'data': render_template('review_data.html', review=review,
                                                       starred=crud.is_starred(review['review_id'],
                                                                               current_user.db_id) if current_user.is_authenticated else False),
@@ -446,16 +467,18 @@ def blank():
     """ load ftext review page """
     review_id = request.args.get('id')
     abstract = ''
+    title = ''
     if review_id:
         review = crud.get_ftext_review(review_id)
         if not review:
             return "That resource does not exist.", 404, {
                 'ContentType': 'application/json'}
         abstract = review['abstract']
+        title = review['title']
         if current_user.db_id != review['user_id']:
             return "Sorry! You do not have access to view this.", 403, {
                 'ContentType': 'application/json'}
-    return render_template('blank.html', abstract=abstract)
+    return render_template('blank.html', abstract=abstract, review_id=review_id, title=title)
 
 
 @app.route('/ftext_review', methods=['POST'])
@@ -473,12 +496,51 @@ def create_ftext_review():
         'ContentType': 'application/json'}
 
 
+@app.route('/deleteftext', methods=['POST'])
+def delete_ftext_review():
+    """Delete freetext review"""
+    if not current_user.is_authenticated:
+        return "Sorry! This action is only available to logged-in users", 401, {
+            'ContentType': 'application/json'}
+
+    data = request.json
+    review_id = data['review_id']
+    user_id = current_user.db_id
+    idx = crud.delete_ftext_review(review_id, user_id)
+    if idx:
+        return json.dumps({'success': True, 'message': 'Review deleted successfully', 'idx': review_id}), 200, {
+            'ContentType': 'application/json'}
+    else:
+        return json.dumps({'success': False, 'message': 'Review not found', 'idx': review_id}), 404, {
+            'ContentType': 'application/json'}
+
+
+@app.route('/updateftexttitle', methods=['POST'])
+def update_ftext_title():
+    """Update freetext review title"""
+    if not current_user.is_authenticated:
+        return "Sorry! This action is only available to logged-in users", 401, {
+            'ContentType': 'application/json'}
+
+    data = request.json
+    print(data)
+    review_id = data['review_id']
+    user_id = current_user.db_id
+    title = data['title']
+    idx = crud.update_ftext_title(review_id, title, user_id)
+    if idx:
+        return json.dumps({'success': True, 'message': 'Review deleted successfully', 'idx': review_id}), 200, {
+            'ContentType': 'application/json'}
+    else:
+        return json.dumps({'success': False, 'message': 'Review not found', 'idx': review_id}), 404, {
+            'ContentType': 'application/json'}
+
+
 @app.route('/saved', methods=['GET'])
 def saved():
     """ load saved reviews page """
     reviews = crud.get_saved_reviews(current_user.db_id)
     ftext_reviews = crud.get_ftext_reviews(current_user.db_id)
-    print(ftext_reviews)
     return render_template('saved.html', reviews=reviews, ftext_reviews=ftext_reviews)
 
 

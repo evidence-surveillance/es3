@@ -60,11 +60,25 @@
             <ul class="list-group">
                 {% if ftext_reviews|length %}
                     {% for review in ftext_reviews %}
-                        <li class="list-group-item">
-                            <a href="/blank?id={{ review.review_id }}">{{ ''.join(''.join(review.abstract.partition('.')[:2]).partition('?')[:2]) }}</a>
-                            <br>
-                            <small><em>{{ review.dated_added.strftime('%Y') }}</em></small>
+                        <li class="list-group-item" style="position:relative">
+                            <div class="delete-ftext" id="del-{{ review.review_id }}"
+                                 style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);font-size:1.7rem;cursor:pointer;">
+                                ✘
+                            </div>
+                            <div style="margin-left:2rem">
 
+                                <a href="/blank?id={{ review.review_id }}">
+                                    {% if review.title %}
+                                        {{ review.title }}
+                                    {% elif review.abstract %}
+                                        {{ ''.join(''.join(review.abstract.partition('.')[:2]).partition('?')[:2]) }}
+                                    {% else %}
+                                        {% raw %} << No Title or Abstract >> {% endraw %}
+                                    {% endif %}
+                                </a>
+                                <br>
+                                <small><em>{{ review.dated_added.strftime('%Y') }}</em></small>
+                            </div>
 
                         </li>
 

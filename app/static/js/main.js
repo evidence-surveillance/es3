@@ -15,6 +15,28 @@ $(document).ready(function () {
             }
         }
 
+        function debounce(func, wait, immediate) {
+            var timeout;
+
+            return function executedFunction() {
+                var context = this;
+                var args = arguments;
+
+                var later = function () {
+                    timeout = null;
+                    if (!immediate) func.apply(context, args);
+                };
+
+                var callNow = immediate && !timeout;
+
+                clearTimeout(timeout);
+
+                timeout = setTimeout(later, wait);
+
+                if (callNow) func.apply(context, args);
+            };
+        };
+
         function gen_plot(msg) {
             var data = msg['data'];
             var plt = Bokeh.Plotting;
@@ -82,6 +104,7 @@ $(document).ready(function () {
         //     }, 30);
         // }
         socket.on('blank_update', function (msg) {
+            console.log('server update:', msg['msg']);
             $("#progress_txt").text(msg['msg']);
             if (msg['msg'].indexOf('complete') > -1) {
                 $(".progress_div").slideUp(1000);
@@ -233,7 +256,10 @@ $(document).ready(function () {
                 if (!$.trim(plot.html())) {
                     Bokeh.Plotting.show(p, plot);
                     plot.slideDown(2000);
-                    $(".progress_div").slideUp(1000);
+                    if (window.location.pathname !== '/blank') {
+                        $(".progress_div").slideUp(1000);
+                    }
+
                 } else {
                     plot.animate({'opacity': 0.01}, 1000, function () {
                         plot.empty();
@@ -253,18 +279,32 @@ $(document).ready(function () {
                     var replacement = $(node).filter('#accordion-rel');
                     $("#accordion-rel").html(replacement.html());
                 }
+                var size_li = $("#accordion-rel").children("div.panel-default").length;
+                var x = 10;
+                $('#accordion-rel div.panel-default').hide();
+                $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+
+                $('#load_more_rel').click(function () {
+                    x = (x + 5 <= size_li) ? x + 5 : size_li;
+                    $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+                    if (x === size_li) {
+                        $('#load_more_rel').hide();
+                    }
+                });
 
             }
             if (msg['section'] === 'related_reviews') {
                 $("#related-reviews").html(msg['data']);
                 $("#related-reviews").slideDown(1000);
                 if (window.location.pathname === '/blank') {
+                    $('#related-reviews').css('display', 'block');
                     $('#related-sort').removeClass('hidden');
                     abstractRelatedReviews = $($.parseHTML(msg['data'])).filter('#related_review_items');
                 }
             }
             if (msg['section'] === 'related_reviews_update') {
                 $("#related_review_items").html(msg['data']);
+
             }
             if (msg['section'] === 'rel_trials') {
                 var rel_container = $("#rel_trials_container");
@@ -278,9 +318,10 @@ $(document).ready(function () {
                     $("#accordion-rel").slideDown(2000);
                 }
                 var size_li = $("#accordion-rel").children("div.panel-default").length;
-                var x = 20;
+                var x = 10;
                 $('#accordion-rel div.panel-default').hide();
                 $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+
                 $('#load_more_rel').click(function () {
                     x = (x + 5 <= size_li) ? x + 5 : size_li;
                     $('#accordion-rel div.panel-default:lt(' + x + ')').show();
@@ -336,7 +377,7 @@ $(document).ready(function () {
                     });
 
                     if ($('#rel-sort-trials').prop('checked')) {
-                        console.log($('#accordion-incl .panel').toArray().map(d => d.id.substring(6)));
+
                         socket.emit('refresh_related', {
                             trials: $('#accordion-incl .panel').toArray().map(d => d.id.substring(6))
                         });
@@ -403,6 +444,26 @@ $(document).ready(function () {
                 });
             }
             var url = window.location.href;
+            if (window.location.pathname === '/saved') {
+                $('.delete-ftext').on('click', e => {
+                    const idx = $(e.target).attr('id').substr(4);
+
+                    $.ajax({
+                        url: '/deleteftext',
+                        method: 'post',
+                        contentType: 'application/json;charset=UTF-8',
+                        data: JSON.stringify({
+                            review_id: idx
+                        }),
+                        success: () => {
+                            $(e.target).parents('.list-group-item').remove();
+                        },
+                        error: err => {
+                            console.log(err);
+                        }
+                    })
+                })
+            }
             if (window.location.pathname === '/') {
                 $(document).ready(function () {
                     var title_div = $("#plot_title");
@@ -458,23 +519,27 @@ $(document).ready(function () {
                         if (idx === 'rel-sort-abstract') {
                             $("#related_review_items").html(abstractRelatedReviews);
                         } else {
-                            console.log($('#accordion-incl .panel').toArray().map(d => d.id.substring(6)));
+
                             socket.emit('refresh_related', {
                                 trials: $('#accordion-incl .panel').toArray().map(d => d.id.substring(6))
                             });
                         }
                     });
 
-                    $(document).on("click", "#submit_text", function (e) {
+                    $(document).on("click", "#submit_text, #submit_blank", function (e) {
                         var text = $("#free_text").val();
-                        if (text.length === 0) {
+                        const idx = $(e.target).attr('id');
+                        const blank = idx === 'submit_blank';
+                        if (text.length === 0 && !blank) {
                             return;
                         }
+
+
                         $.ajax({
                             url: '/ftext_review',
                             method: 'post',
                             contentType: 'application/json;charset=UTF-8',
-                            data: JSON.stringify({abstract: text}),
+                            data: JSON.stringify({abstract: blank ? '' : text}),
                             success: function (data) {
                                 window.location.href = `/blank?id=${JSON.parse(data)['idx']}`;
                             },
@@ -491,6 +556,48 @@ $(document).ready(function () {
 
                     const idx = getUrlParameter('id');
                     if (idx) {
+
+                        let prev_abstract = $('#free_text').val();
+                        $('#free_text').on('blur', debounce(e => {
+                            const abstract = $(e.target).val();
+                            if (abstract && abstract !== prev_abstract) {
+                                $('#abstract-saved').text('Saved').removeClass('text-danger').addClass('text-success');
+                                prev_abstract = abstract;
+                                $('#progress_txt').text('Refreshing Recommended Trials...');
+                                $('#top-progress').slideDown(1000);
+                                socket.emit('freetext_trials', {'review_id': idx, abstract});
+                            }
+                        }, 3000, true)).on('keyup', e => {
+                            const abstract = $(e.target).val();
+                            if (abstract && abstract !== prev_abstract) {
+                                $('#abstract-saved').text('Not Saved').addClass('text-danger').removeClass('text-success');
+                            } else if (abstract === prev_abstract) {
+                                $('#abstract-saved').text('Saved').removeClass('text-danger').addClass('text-success');
+                            }
+                        });
+
+                        let prev_title = $('#free_text_title').val();
+                        $('#free_text_title').on('blur', debounce(e => {
+                            const title = $(e.target).val();
+                            if (title && title !== prev_title) {
+                                $('#title-saved').text('Saved').removeClass('text-danger').addClass('text-success');
+                                prev_title = title;
+                                $.ajax({
+                                    url: '/updateftexttitle',
+                                    method: 'post',
+                                    contentType: 'application/json;charset=UTF-8',
+                                    data: JSON.stringify({review_id: getUrlParameter('id'), title})
+                                })
+                            }
+                        }, 3000, true)).on('keyup', e => {
+                            const title = $(e.target).val();
+                            if (title && title !== prev_title) {
+                                $('#title-saved').text('Not Saved').addClass('text-danger').removeClass('text-success');
+                            } else if (title === prev_title) {
+                                $('#title-saved').text('Saved').removeClass('text-danger').addClass('text-success');
+                            }
+                        });
+
 
                         $('#top-progress').slideDown(1000);
 
@@ -659,14 +766,14 @@ $(document).ready(function () {
         $(document).on("click", ".rec_rel_incl", function (e) {
             var nct_id = e.target.id.substring(0, 11);
             if (window.location.pathname === '/blank') {
-                submitTrial(nct_id, 'included', true, function (data) {
+                submitTrial(nct_id, 'included', true, debounce(data => {
                     socket.emit('refresh_trials', {
                         'ftext': window.location.pathname === '/blank',
                         'review_id': getUrlParameter('id'),
                         'type': 'incl',
                         'plot': false
                     });
-                });
+                }, 2000));
 
                 $('#' + nct_id + '_movincl').css('visibility', 'hidden');
                 return;
@@ -828,7 +935,7 @@ $(document).ready(function () {
             var re_nct = new RegExp('^(NCT|nct)[0-9]{8}$');
             var category = e.target.name;
             var nct_id = $('#' + category + '-id').val().trim();
-            console.log(re_nct.test(nct_id))
+
 
             if (re_nct.test(nct_id)) {
                 var accordion = $('#accordion-' + category);
@@ -902,7 +1009,7 @@ $(document).ready(function () {
                 $(e.target).parents('.panel').remove();
 
                 if ($('#rel-sort-trials').prop('checked')) {
-                    console.log($('#accordion-incl .panel').toArray().map(d => d.id.substring(6)));
+
                     socket.emit('refresh_related', {
                         trials: $('#accordion-incl .panel').toArray().map(d => d.id.substring(6))
                     });
