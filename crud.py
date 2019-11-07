@@ -516,9 +516,18 @@ def reviews_for_condition(condition):
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(
-        "SELECT r.review_id, sr.title, sr.publish_date as year, ct.condition from ct_conditions ct inner join trial_conditions tc on tc.condition_id = ct.id inner join review_rtrial r on r.nct_id = tc.nct_id inner join systematic_reviews sr on r.review_id = sr.review_id where r.relationship = 'included' and tc.condition_id = %s group by r.review_id, sr.title, ct.condition, sr.publish_date order by sr.publish_date desc;",
+        """
+        SELECT r.review_id, sr.title, sr.publish_date as year, ct.condition, sr.verified_review
+        FROM ct_conditions ct 
+        INNER JOIN trial_conditions tc ON tc.condition_id = ct.id 
+        INNER JOIN review_rtrial r on r.nct_id = tc.nct_id 
+        INNER JOIN systematic_reviews sr on r.review_id = sr.review_id 
+        WHERE r.relationship = 'included' and tc.condition_id = %s 
+        GROUP BY r.review_id, sr.title, ct.condition, sr.publish_date, sr.verified_review
+        ORDER BY sr.publish_date desc;""",
         (condition,))
     reviews = cur.fetchall()
+    print(reviews)
     conn.close()
     return reviews
 

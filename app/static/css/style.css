@@ -99,6 +99,17 @@ footer {
     border-bottom-left-radius: 10px;
 }
 
+.browse-item {
+    display: flex;
+}
+
+.browse-item > div:nth-child(1) {
+    align-self: center;
+    margin-right: 1rem;
+    min-width: 80px;
+    text-align:center;
+}
+
 .progress_div {
     padding: 0 1rem;
     margin: 1rem 0;

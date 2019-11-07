@@ -4,25 +4,28 @@
 
 
     <div class="container pg_content">
-    <h1 class ="display-3 text-left">{{ reviews[0].condition}}</h1>
-    <hr>
+        <h1 class="display-3 text-left">{{ reviews[0].condition }}</h1>
+        <hr>
 
         <div class="row">
 
-        <ul class="list-group">
+            <ul class="list-group">
 
-            {% for review in reviews %}
-                <li class="list-group-item">
-                <a href="/search?searchterm={{ review.review_id }}">{{ review.title }}</a>
-                    <br><small><em>{{ review.year }}</em></small>
-            </li>
+                {% for review in reviews %}
+                    <li class="list-group-item browse-item">
+                        <div class="{{ 'text-success' if review.verified_review else 'text-warning' }}">
+                            {{ 'Verified' if review.verified_review else 'Unverified' }}
+                        </div>
+                        <div>
+                            <a href="/search?searchterm={{ review.review_id }}">{{ review.title }}</a>
+                            <br><small><em>{{ review.year }}</em></small>
+                        </div>
+                    </li>
 
-            {% endfor %}
+                {% endfor %}
 
 
-        </ul>
-
-
+            </ul>
 
 
         </div>
