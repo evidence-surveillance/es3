@@ -22,6 +22,7 @@ import eventlet
 from flask_socketio import emit
 from eutils import Client
 from collections import OrderedDict
+from timeit import default_timer as time
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -76,12 +77,17 @@ def refresh_related(data):
 
 @socketio.on('freetext_trials')
 def freetext_trials(data):
+    start = time()
     freetext = ''
     if 'abstract' in data:
         freetext = data['abstract']
         crud.update_ftext_review(data['review_id'], current_user.db_id, freetext)
     else:
         freetext = crud.get_ftext_review(data['review_id'])['abstract']
+
+    bp1 = time()
+    print('1 Time since last breakpoint: ', bp1 - start)
+    print('Total time: ', bp1 - start)
 
     emit('blank_update', {'msg': 'finding similar trials'}, room=request.sid)
     trial_ids = list(
@@ -90,28 +96,46 @@ def freetext_trials(data):
         ).keys()
     )
 
+    bp2 = time()
+    print('2 Time since last breakpoint: ', bp2 - bp1)
+    print('Total time: ', bp2 - start)
 
     emit('blank_update', {'msg': 'retrieving related reviews'}, room=request.sid)
     related = crud.related_reviews_from_trials(trial_ids, True)
-    trials = crud.get_trials_by_id(trial_ids, True) if trial_ids else []
+    recommended_trials = crud.get_trials_by_id(trial_ids, True) if trial_ids else []
+    flagged_trials = crud.get_ftext_trials_fast(data['review_id'])['reg_trials']
+    flagged_ids = [flagged_trial['nct_id'] for flagged_trial in flagged_trials]
+    # Remove flagged trials from recommended trials
+    recommended_trials = [trial for trial in recommended_trials if trial['nct_id'] not in flagged_ids]
 
     plot_trials = []
-    for t in trials:
+
+    for t in (recommended_trials + flagged_trials):
         t = dict(t)
         t['sum'] = 2
         t['verified'] = False
-        t['relationship'] = 'relevant'
+        t['relationship'] = 'included' if t['nct_id'] in flagged_ids else 'relevant'
         plot_trials.append(t)
     emit('blank_update', {'msg': 'loading plots'}, room=request.sid)
-    formatted = utils.trials_to_plotdata(plot_trials[:20])
+    formatted = utils.trials_to_plotdata(plot_trials)
     socketio.emit('page_content',
                   {'section': 'plot', 'data': formatted, 'page': 'blank',
                    }, room=request.sid)
 
     emit('blank_update', {'msg': 'rendering page'}, room=request.sid)
+
+    bp3 = time()
+    print('3 Time since last breakpoint: ', bp3 - bp2)
+    print('Total time: ', bp3 - start)
+
+
+    bp4 = time()
+    print('4 Time since last breakpoint: ', bp4 - bp3)
+    print('Total time: ', bp4 - start)
+
     emit('page_content', {
         'section': 'recommended_trials',
-        'data': render_template('recommended_trials.html', reg_trials=trials),
+        'data': render_template('recommended_trials.html', reg_trials=recommended_trials),
     }, room=request.sid)
 
     emit('page_content', {
@@ -119,15 +143,16 @@ def freetext_trials(data):
         'data': render_template('related_reviews.html', related_reviews=related)
     }, room=request.sid)
 
-    id = data['review_id']
-    trials = crud.get_ftext_trials_fast(id)
-
     emit('page_content',
          {'section': 'incl_trials',
-          'data': render_template('ftext_incl_trials.html', reg_trials=trials['reg_trials'])
+          'data': render_template('ftext_incl_trials.html', reg_trials=flagged_trials)
           }, room=request.sid)
 
     emit('blank_update', {'msg': 'loading complete'}, room=request.sid)
+
+    bp5 = time()
+    print('5 Time since last breakpoint: ', bp5 - bp4)
+    print('Total time: ', bp5 - start)
     # plot.plot_trials.delay(relevant=trial_ids, page='reviewdetail',
     #                        sess_id=request.sid)
 
@@ -146,18 +171,28 @@ def refresh_trials(json):
     sort = json['sort'] if 'sort' in json else 'total_votes'
 
     if ftext_bool:
-        trials = crud.get_ftext_trials_fast(id)
+        trials = crud.get_ftext_trials_fast(id)['reg_trials']
         emit('page_content',
              {'section': 'incl_trials',
               'sort': sort,
-              'data': render_template('ftext_incl_trials.html', reg_trials=trials['reg_trials'])
+              'data': render_template('ftext_incl_trials.html', reg_trials=trials)
               }, room=request.sid)
-        # if plot_bool:
-        #     formatted = utils.trials_to_plotdata(trials['reg_trials'])
-        #     socketio.emit('page_content',
-        #                   {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
-        #                    'review_id': id
-        #                    }, room=request.sid)
+        if plot_bool:
+            recommended_trials = crud.get_trials_by_id(json['rec_trials'])
+            flagged_ids = [trial['nct_id'] for trial in trials]
+            recommended_trials = [trial for trial in recommended_trials if trial['nct_id'] not in flagged_ids]
+            plot_trials = []
+            for t in (recommended_trials + trials):
+                t = dict(t)
+                t['sum'] = 2
+                t['verified'] = False
+                t['relationship'] = 'included' if t['nct_id'] in flagged_ids else 'relevant'
+                plot_trials.append(t)
+            formatted = utils.trials_to_plotdata(plot_trials)
+            socketio.emit('page_content',
+                          {'section': 'plot', 'data': formatted, 'page': 'reviewdetail',
+                           'review_id': id
+                           }, room=request.sid)
 
     else:
         trials = crud.get_review_trials_fast(id, order=sort,

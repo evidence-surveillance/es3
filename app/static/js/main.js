@@ -269,6 +269,7 @@ $(document).ready(function () {
                 }
             }
             if (msg['section'] === 'recommended_trials') {
+
                 var rel_container = $("#rel_trials_container");
                 if (rel_container.is(':empty')) {
                     rel_container.html(msg['data']);
@@ -371,9 +372,10 @@ $(document).ready(function () {
 
                 if (window.location.pathname === '/blank') {
                     replacement.children().each(function (_, nct) {
+                        console.log(nct, $(nct).attr('id'));
                         var nct_id = $(nct).attr('id').substring(6);
 
-                        $(`#${nct_id}_movincl`).css('visibility', 'hidden');
+                        $(`#rel_trials_container #panel_${nct_id}`).fadeOut(1000, () => $(`#rel_trials_container #panel_${nct_id}`).detach());
                     });
 
                     if ($('#rel-sort-trials').prop('checked')) {
@@ -765,23 +767,27 @@ $(document).ready(function () {
         });
         $(document).on("click", ".rec_rel_incl", function (e) {
             var nct_id = e.target.id.substring(0, 11);
-            if (window.location.pathname === '/blank') {
-                submitTrial(nct_id, 'included', true, debounce(data => {
+            var $panel = $('#panel_' + nct_id);
+            var category = 'incl';
+            $('#' + nct_id + '_movincl').css('visibility', 'hidden');
+            submitTrial(nct_id, 'included', true, data => {
+
+
+                $panel.fadeOut("slow", function () {
+
                     socket.emit('refresh_trials', {
-                        'ftext': window.location.pathname === '/blank',
+                        'ftext': true,
                         'review_id': getUrlParameter('id'),
                         'type': 'incl',
-                        'plot': false
+                        'plot': true,
+                        'rec_trials': $('#accordion-rel').children('.panel-default').toArray().map(div => $(div).attr('id').substring(6))
                     });
-                }, 2000));
+                    $panel.detach();
+                });
 
-                $('#' + nct_id + '_movincl').css('visibility', 'hidden');
-                return;
-            }
+            });
 
-            var panel = $('#panel_' + nct_id);
-            $(panel).detach().appendTo('#accordion-incl');
-            $('#' + nct_id + '_movincl').css('visibility', 'hidden');
+
         });
         $(document).on("click", ".save_review", function (e) {
             var val = true;
@@ -939,7 +945,7 @@ $(document).ready(function () {
 
             if (re_nct.test(nct_id)) {
                 var accordion = $('#accordion-' + category);
-                disable_elements(); // todo: renable
+                disable_elements();
                 submitTrial(nct_id, (category.indexOf('incl') > -1 ? 'included' : 'relevant'), window.location.pathname === '/blank', function (data) {
                     var result = JSON.parse(data);
                     if (result['success'] == true) {
@@ -955,7 +961,8 @@ $(document).ready(function () {
                             'ftext': window.location.pathname === '/blank',
                             'review_id': getUrlParameter('searchterm') || getUrlParameter('id'),
                             'type': category,
-                            'plot': true
+                            'plot': true,
+                            'rec_trials': $('#accordion-rel').children('.panel-default').toArray().map(div => $(div).attr('id').substring(6))
                         });
 
                         if (category.indexOf('incl') > -1 && window.location.pathname !== '/blank') {
@@ -1099,6 +1106,7 @@ $(document).ready(function () {
         }
 
         function submitTrial(id, relationship, userCreated = false, callback) {
+            disable_elements();
             let review_id = getUrlParameter('searchterm');
             let url = '/submittrial';
 
@@ -1118,11 +1126,13 @@ $(document).ready(function () {
                 }),
                 success: function (data) {
                     callback(data);
+                    enable_elements();
                 },
                 error: function (data2) {
                     var modal = $("#myModal");
                     modal.find('.modal-body p').text(data2['responseText']);
                     modal.modal();
+                    enable_elements();
                 }
             });
         }
