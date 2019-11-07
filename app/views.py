@@ -166,7 +166,7 @@ def refresh_trials(json):
     id = json['review_id']
     type = json['type']
     plot_bool = json['plot']
-    ftext_bool = json['ftext']
+    ftext_bool = json.get('ftext', False)
 
     sort = json['sort'] if 'sort' in json else 'total_votes'
 
