@@ -4,22 +4,27 @@
 
 
     <div class="container pg_content">
-    <h1 class ="display-3 text-left">Browse by category</h1>
-    <hr>
+        <h1 class="display-3 text-left">Browse by category</h1>
+        <hr>
 
         <div class="row">
 
+        <div class="checkbox">
+            <input type="checkbox" id="verified-only">
+            <label for="verified-only">Verified only</label>
+        </div>
 
-          <ul class="list-group">
 
-        {% for category in categories %}
-            <li class="list-group-item">
-                <span class="badge" id = "{{ category.code }}">...</span>
-                   <a href="/category/{{ category.id }}">{{ category.name }}</a>
-            </li>
+            <ul class="list-group">
+
+                {% for category in categories %}
+                    <li class="list-group-item">
+                        <span class="badge" id="{{ category.code }}">0</span>
+                        <a href="/category/{{ category.id }}">{{ category.name }}</a>
+                    </li>
                 {% endfor %}
 
-        </ul>
+            </ul>
 
 
         </div>

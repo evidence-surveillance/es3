@@ -48,7 +48,16 @@ def get_ftext_reviews(user_id):
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(
-        "SELECT * from freetext_reviews where user_id = %s order by dated_added;",
+        """
+            SELECT * 
+            FROM freetext_reviews 
+            WHERE user_id = %s 
+                AND (
+                    length(title) > 0 
+                    OR length(abstract) > 0
+                )
+            ORDER BY date_updated DESC;
+        """,
         (user_id,))
     return cur.fetchall()
 
@@ -72,25 +81,48 @@ def save_review(review_id, user_id, bool):
     conn.close()
 
 
-def save_ftext_review(abstract, user_id):
+def get_most_recent_ftext_review(user_id):
     """
-    Save (or update) a freetext review
-    :param abstract:
+    Get most recent freetext review (create if none exist)
     :param user_id:
     """
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO freetext_reviews(user_id, abstract)
-        VALUES (%s, %s)
-        ON CONFLICT (review_id) DO UPDATE
-        SET abstract = %s
+        SELECT review_id
+        FROM freetext_reviews
+        WHERE user_id = %s
+           AND date_updated = (
+              SELECT max(date_updated) 
+              FROM freetext_reviews
+           );
+    """, (user_id,))
+    conn.commit()
+    record = cur.fetchone()
+
+    idx = record[0] if record else create_ftext_review(user_id)
+
+    conn.close()
+    return idx
+
+
+def create_ftext_review(user_id):
+    """
+    Create a freetext review
+    :param user_id:
+    """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO freetext_reviews(user_id)
+        VALUES (%s)
         RETURNING review_id;
-    """, (user_id, abstract, abstract))
+    """, (user_id,))
     conn.commit()
     idx = cur.fetchone()[0]
     conn.close()
     return idx
+
 
 def delete_ftext_review(review_id, user_id):
     """
@@ -126,7 +158,7 @@ def update_ftext_title(review_id, title, user_id):
     cur = conn.cursor()
     cur.execute("""
             UPDATE freetext_reviews
-            SET title = %s
+            SET title = %s, date_updated = NOW()
             WHERE review_id = %s
             AND user_id = %s
             RETURNING review_id;
@@ -136,6 +168,7 @@ def update_ftext_title(review_id, title, user_id):
     idx = idx[0] if idx else None
     conn.close()
     return idx
+
 
 def update_ftext_review(review_id, user_id, abstract):
     """
@@ -148,7 +181,7 @@ def update_ftext_review(review_id, user_id, abstract):
     cur = conn.cursor()
     cur.execute("""
             UPDATE freetext_reviews
-            SET abstract = %s
+            SET abstract = %s, date_updated = NOW()
             WHERE review_id = %s
             AND user_id = %s
             RETURNING review_id;
@@ -160,10 +193,11 @@ def update_ftext_review(review_id, user_id, abstract):
     return idx
 
 
-def get_ftext_review(review_id):
+def get_ftext_review(review_id, user_id):
     """
     Get a freetext review
     :param review_id:
+    :param user_id:
     :return:
     """
     conn = dblib.create_con(VERBOSE=True)
@@ -171,8 +205,9 @@ def get_ftext_review(review_id):
     cur.execute("""
         SELECT *
         FROM freetext_reviews
-        WHERE review_id = %s;
-    """, (review_id,))
+        WHERE review_id = %s
+        AND user_id = %s;
+    """, (review_id, user_id,))
 
     res = cur.fetchone()
     conn.close()
@@ -195,9 +230,8 @@ def remove_ftext_trial(review_id, nct_id):
     try:
         cur.execute(sql, (review_id, nct_id,))
         conn.commit()
-        print('deleted', review_id, nct_id, 'link')
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
     conn.close()
 
@@ -219,7 +253,7 @@ def link_ftext_trial(review_id, nct_id):
         cur.execute(sql, (review_id, nct_id,))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
         if add_missing_trial(nct_id):
             cur.execute(sql, (review_id, nct_id,))
@@ -257,7 +291,8 @@ def review_publication(review_id, publication_id, user_id):
             (review_id, publication_id, user_id))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print e
+        print
+        e
         conn.rollback()
         ec = Client(api_key=eutils_key)
         article = ec.efetch(db='pubmed', id=publication_id)
@@ -317,7 +352,7 @@ def link_review_trial(review_id, nct_id, verified, relationship, nickname, user_
             (review_id, nct_id, verified, 0, 0, relationship, nickname, user_id))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
         if add_missing_trial(nct_id):
             cur.execute(
@@ -398,7 +433,7 @@ def publication_trial(publication_id, nct_id, user_id):
             (publication_id, nct_id, user_id))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print e
+        print(e)
         conn.rollback()
         add_missing_trial(nct_id)
         cur.execute(
@@ -460,12 +495,31 @@ def get_categories():
 
 
 @cache.memoize(timeout=86400)
-def category_counts():
+def category_counts(only_verified):
     """ get the # reviews with linked trials in each category """
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute(
-        "SELECT ct.category, ct.code, count(distinct r.review_id) as review_count from ct_categories ct inner join category_condition cd on cd.category_id = ct.id inner join trial_conditions tc on tc.condition_id = cd.condition_id inner join review_rtrial r on r.nct_id = tc.nct_id where r.relationship = 'included' group by ct.category ORDER BY count(*) desc;")
+
+    sql = """
+            SELECT ct.category, ct.code, count(distinct r.review_id) AS review_count 
+            FROM ct_categories ct 
+            INNER JOIN category_condition cd ON cd.category_id = ct.id 
+            INNER JOIN trial_conditions tc ON tc.condition_id = cd.condition_id 
+            INNER JOIN review_rtrial r ON r.nct_id = tc.nct_id 
+            %s
+            GROUP BY ct.category;
+          """
+
+    if only_verified:
+        sql = sql % """
+                        INNER JOIN systematic_reviews sr ON r.review_id = sr.review_id
+                        WHERE sr.included_complete and r.relationship = 'included'
+                    """
+    else:
+        sql = sql % "WHERE r.relationship = 'included' "
+
+    cur.execute(sql)
+
     categories = cur.fetchall()
     conn.close()
     return [{'name': c['category'], "code": c['code'], "count": c['review_count']} for c in categories]
@@ -498,13 +552,38 @@ def category_name(category_id):
 
 
 @cache.memoize(timeout=86400)
-def condition_counts(category):
+def condition_counts(category, only_verified):
     """ get the # reviews with linked trials for each condition in the specified category """
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute(
-        "SELECT ct.condition, ct.id, count(distinct r.review_id) as review_count from ct_conditions ct inner join trial_conditions tc on tc.condition_id = ct.id inner join review_rtrial r on r.nct_id = tc.nct_id inner join category_condition cd on cd.condition_id = tc.condition_id inner join ct_categories cat on cat.id = cd.category_id where r.relationship = 'included' and cd.category_id = %s group by ct.condition, cat.category ORDER BY count(*) desc;",
-        (category,))
+
+    sql = """
+            SELECT ct.condition, ct.id, count(DISTINCT r.review_id) AS review_count 
+            FROM ct_conditions ct 
+            INNER JOIN trial_conditions tc ON tc.condition_id = ct.id 
+            INNER JOIN review_rtrial r ON r.nct_id = tc.nct_id 
+            INNER JOIN category_condition cd ON cd.condition_id = tc.condition_id 
+            INNER JOIN ct_categories cat ON cat.id = cd.category_id 
+            %s 
+            GROUP BY ct.condition, cat.category 
+            ORDER BY count(*) DESC;
+        """
+
+    if only_verified:
+        sql = sql % """
+                        INNER JOIN systematic_reviews sr ON r.review_id = sr.review_id
+                        WHERE sr.included_complete 
+                          AND r.relationship = 'included'
+                          AND cd.category_id = %s
+                    """
+    else:
+        sql = sql % """
+                        WHERE r.relationship = 'included' 
+                        AND cd.category_id = %s
+                    """
+
+    cur.execute(sql, (category,))
+
     conditions = cur.fetchall()
     conn.close()
     return [{'name': c['condition'], "id": c['id'], "count": c['review_count']} for c in conditions]
@@ -517,17 +596,16 @@ def reviews_for_condition(condition):
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(
         """
-        SELECT r.review_id, sr.title, sr.publish_date as year, ct.condition, sr.verified_review
+        SELECT r.review_id, sr.title, sr.publish_date as year, ct.condition, sr.included_complete
         FROM ct_conditions ct 
         INNER JOIN trial_conditions tc ON tc.condition_id = ct.id 
         INNER JOIN review_rtrial r on r.nct_id = tc.nct_id 
         INNER JOIN systematic_reviews sr on r.review_id = sr.review_id 
         WHERE r.relationship = 'included' and tc.condition_id = %s 
-        GROUP BY r.review_id, sr.title, ct.condition, sr.publish_date, sr.verified_review
+        GROUP BY r.review_id, sr.title, ct.condition, sr.publish_date, sr.included_complete
         ORDER BY sr.publish_date desc;""",
         (condition,))
     reviews = cur.fetchall()
-    print(reviews)
     conn.close()
     return reviews
 
@@ -544,15 +622,44 @@ def get_reviews_with_ids(ids):
 
 
 @cache.memoize(timeout=86400)
-def unique_reviews_trials():
-    """ get the count of unique reviews and unique trials that have links """
+def data_summary():
+    """ get a summary of data to display on index """
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(
-        "select count(distinct review_id) as reviews, count(distinct nct_id) as trials from review_rtrial where relationship = 'included';")
-    reviews = cur.fetchone()
+        """
+            SELECT sr.count AS sr_count, tr.count AS tr_count, 
+                links.count as links, verif.count as verified, updated.max as updated
+            FROM (
+                SELECT count(1) 
+                FROM systematic_reviews
+            ) AS sr, (
+                SELECT count(distinct nct_id) 
+                FROM review_rtrial
+                WHERE relationship = 'included'
+            ) AS tr, (
+                SELECT count(1)
+                FROM review_rtrial
+            ) as links, (
+                SELECT count(1)
+                FROM systematic_reviews
+                WHERE included_complete
+            ) as verif, (
+                SELECT MAX(max) 
+                FROM (
+                    SELECT MAX(retrieval_timestamp) 
+                    FROM tregistry_entries 
+                    UNION ALL 
+                    SELECT MAX(date_added) 
+                    FROM systematic_reviews
+                ) as t
+            ) as updated;
+        """)
+    # "select count(distinct review_id) as reviews, count(distinct nct_id) as trials from review_rtrial where relationship = 'included';")
+    data = cur.fetchone()
     conn.close()
-    return {"reviews": reviews['reviews'], "trials": reviews['trials']}
+    return {"reviews": data['sr_count'], "trials": data['tr_count'],
+            "links": data['links'], "verified": data['verified'], 'updated': data['updated']}
 
 
 httplib.HTTPResponse.read = utils.patch_http_response_read(httplib.HTTPResponse.read)
@@ -566,7 +673,8 @@ def update_record(xml_file):
     try:
         obj = untangle.parse(xml_file)
     except Exception as e:
-        print e
+        print
+        e
         return False
     result = {'condition': []}
     result['completion_date'] = None

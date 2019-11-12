@@ -9,13 +9,16 @@
 
         <div class="row">
 
-
+            <div class="checkbox">
+                <input type="checkbox" id="verified-only">
+                <label for="verified-only">Verified only</label>
+            </div>
 
           <ul class="list-group">
 
               {% for condition in conditions %}
             <li class="list-group-item">
-                <span class="badge" id = "condition_{{ condition.id }}">...</span>
+                <span class="badge" id = "condition_{{ condition.id }}">0</span>
                   <a href="/condition/{{ condition.id }}">{{ condition.condition }}</a>
             </li>
                 {% endfor %}

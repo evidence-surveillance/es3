@@ -9,12 +9,17 @@
 
         <div class="row">
 
+            <div class="checkbox">
+                <input type="checkbox" id="verified-only">
+                <label for="verified-only">Verified only</label>
+            </div>
+
             <ul class="list-group">
 
                 {% for review in reviews %}
                     <li class="list-group-item browse-item">
-                        <div class="{{ 'text-success' if review.verified_review else 'text-warning' }}">
-                            {{ 'Verified' if review.verified_review else 'Unverified' }}
+                        <div class="{{ 'text-success verified' if review.included_complete else 'text-warning unverified' }}">
+                            {{ 'Verified' if review.included_complete else 'Unverified' }}
                         </div>
                         <div>
                             <a href="/search?searchterm={{ review.review_id }}">{{ review.title }}</a>

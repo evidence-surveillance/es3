@@ -3,7 +3,7 @@
 {% block content %}
     {{ super() }}
 
-    <div class="pg_content">
+    <div class="pg_content title-page">
         {#        <div class="jumbotron">#}
 
         {#        </div>#}
@@ -11,46 +11,25 @@
 
         <div class="container-fluid">
             <div class="row" style="padding-left: 40px;">
-                <div class="col-md-4" style="padding-top: 3%; padding-bottom: 3%;">
-                    <h1 class="display-3 text-left">trial2rev</h1>
-                    <p class="lead ">a shared space for humans and machines to work together to
-                        update systematic reviews. </p>
+                <div class="col-md-12">
+                    <h1 class="display-3 text-left">Evidence Surveillance Synthesis and Sharing (<span class="logo-brand"><span class="flip-v-axis">3</span>S<sup>3</sup></span>)</h1>
+                    <p class="lead">A shared space for humans and machines to work together to update systematic
+                        reviews.</p>
                     <hr>
 
-                    <p class="">The trial2rev system is designed to provide an open and accessible list of connections
-                        between systematic reviews and clinical trials, keep track of new clinical trials that are
-                        relevant to already-published systematic reviews, and quickly estimate whether a published
-                        systematic review might be in need of updating.</p>
+                    <p class="">The platform was designed to provide an open and accessible list of connections between
+                        systematic reviews and clinical trials, keep track of new clinical trials that are relevant to
+                        already-published systematic reviews, and check whether a new systematic review might be needed
+                        for a specific clinical question.</p>
 
                     <p class="">It is also a work-in-progress and many of the features are currently only available to
-                        registered users. For more information on usage, how to contact us, and the best ways to credit
-                        us when you use the system in your research, visit “how to use” and “more information”.</p>
+                        registered users. Visit our <a href="/information">information page</a> to learn more.</p>
 
                     <br>
-                    <h1 class="text-center" id ="link_counts" style="display: none;"></h1>
-
+                    <h1 class="text-center" id="link_counts" style="display: none;"></h1>
 
                 </div>
-                <div class="col-md-8" style="padding-top: 3%; padding-bottom: 3%;">
 
-                    <div class="row text-center ">
-                        <div class="col-md-11 col-md-offset-1">
-                            <h5 class="display-3"><a href="" id="plot_title" style="display: none;"></a></h5></div>
-                    </div>
-                    <div class="row vertical-center">
-                        <div class="col-md-11 home-plot" id="plot" style="display: none;">
-                            {{ plot|safe }}
-                        </div>
-                        <div class="col-md-1 ">
-                            <div class="row ">
-                                <button type="button" id="refresh_plot" class="btn btn-default btn-sm"
-                                        style="display: none;">
-                                    <span class="glyphicon glyphicon-chevron-right"></span>
-                                </button>
-                                </div>
-                        </div>
-                    </div>
-                </div>
 
 
             </div>

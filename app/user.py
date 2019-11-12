@@ -73,7 +73,6 @@ class User(UserMixin):
         """
         password = str(self.password)
         salt = self.salt
-        print hashlib.sha256(salt.encode() + str(user_password).encode()).hexdigest()
         return password == hashlib.sha256(salt.encode() + str(user_password).encode()).hexdigest()
 
     @property

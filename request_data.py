@@ -24,7 +24,6 @@ def advanced_search(search_str):
     pmids = json['esearchresult']['idlist']
     if pmids:
         matches = crud.get_reviews_with_ids(pmids)
-        print matches
         return matches if matches else None
     return None
 

@@ -83,7 +83,7 @@ def freetext_trials(data):
         freetext = data['abstract']
         crud.update_ftext_review(data['review_id'], current_user.db_id, freetext)
     else:
-        freetext = crud.get_ftext_review(data['review_id'])['abstract']
+        freetext = crud.get_ftext_review(data['review_id'], current_user.db_id)['abstract']
 
     bp1 = time()
     print('1 Time since last breakpoint: ', bp1 - start)
@@ -127,7 +127,6 @@ def freetext_trials(data):
     bp3 = time()
     print('3 Time since last breakpoint: ', bp3 - bp2)
     print('Total time: ', bp3 - start)
-
 
     bp4 = time()
     print('4 Time since last breakpoint: ', bp4 - bp3)
@@ -287,8 +286,6 @@ def search(json):
         article = ec.efetch(db='pubmed', id=id)
         found_review = None
         for art in article:
-            print
-            art
             if art and str(art.pmid) == id:
                 found_review = art
                 break
@@ -388,18 +385,18 @@ def index():
 
 
 @cache.cached(timeout=60)
-@app.route('/unique_reviews_trials', methods=['GET'])
+@app.route('/data_summary', methods=['GET'])
 def unique_reviews_trials():
-    """ get # unique reviews linked to # unique trials """
-    return json.dumps({'success': True, 'data': crud.unique_reviews_trials()
-                       }), 200, {
+    """ get summary of data for front page """
+    return json.dumps({'success': True, 'data': crud.data_summary()
+                       }, default=str), 200, {
                'ContentType': 'application/json'}
 
 
-@app.route('/howto')
-def howto():
-    """ load how to page  """
-    return render_template('howto.html')
+# @app.route('/howto')
+# def howto():
+#     """ load how to page  """
+#     return render_template('howto.html')
 
 
 @cache.cached(timeout=60)
@@ -425,7 +422,14 @@ def browse_category(category):
 def condition_counts():
     """ get counts for each condition in the specified category """
     data = request.json
-    return json.dumps({'success': True, 'data': crud.condition_counts(data['category'])
+    try:
+        only_verified = bool(int(data['onlyVerified']))
+    except ValueError as e:
+        return json.dumps({'success': False, 'msg': 'bad value for onlyVerified'
+                           }), 400, {
+                   'ContentType': 'application/json'}
+
+    return json.dumps({'success': True, 'data': crud.condition_counts(data['category'], only_verified)
                        }), 200, {
                'ContentType': 'application/json'}
 
@@ -433,7 +437,13 @@ def condition_counts():
 @app.route('/category_counts', methods=['GET'])
 def category_counts():
     """ get review counts for every category """
-    return json.dumps({'success': True, 'data': crud.category_counts()
+    try:
+        only_verified = bool(int(request.args.get('onlyVerified')))
+    except ValueError as e:
+        return json.dumps({'success': False, 'msg': 'bad value for onlyVerified'
+                           }), 400, {
+                   'ContentType': 'application/json'}
+    return json.dumps({'success': True, 'data': crud.category_counts(only_verified)
                        }), 200, {
                'ContentType': 'application/json'}
 
@@ -449,10 +459,10 @@ def review_conditions(condition):
     return render_template('reviews_by_condition.html', reviews=crud.reviews_for_condition(condition))
 
 
-@app.route('/moreinfo')
-def moreinfo():
-    """ load more info page """
-    return render_template('moreinfo.html')
+@app.route('/information')
+def information():
+    """ load info page """
+    return render_template('information.html')
 
 
 @app.route("/logout")
@@ -498,36 +508,51 @@ def search():
 
 
 @app.route('/blank', methods=['GET'])
+@login_required
 def blank():
     """ load ftext review page """
-    review_id = request.args.get('id')
-    abstract = ''
-    title = ''
-    if review_id:
-        review = crud.get_ftext_review(review_id)
-        if not review:
-            return "That resource does not exist.", 404, {
-                'ContentType': 'application/json'}
-        abstract = review['abstract']
-        title = review['title']
-        if current_user.db_id != review['user_id']:
-            return "Sorry! You do not have access to view this.", 403, {
-                'ContentType': 'application/json'}
-    return render_template('blank.html', abstract=abstract, review_id=review_id, title=title)
-
-
-@app.route('/ftext_review', methods=['POST'])
-def create_ftext_review():
-    """Create freetext review"""
     if not current_user.is_authenticated:
         return "Sorry! This action is only available to logged-in users", 401, {
             'ContentType': 'application/json'}
 
-    data = request.json
-    abstract = data['abstract'] or ''
+    review_id = request.args.get('id')
+
+    if not review_id:
+        review_id = crud.get_most_recent_ftext_review(current_user.db_id)
+        return redirect('/blank?id=%s' % review_id)
+
+    review = crud.get_ftext_review(review_id, current_user.db_id)
+    if not review:
+        return "That resource does not exist.", 404, {
+            'ContentType': 'application/json'}
+
+    if current_user.db_id != review['user_id']:
+        return "Sorry! You do not have access to view this.", 403, {
+            'ContentType': 'application/json'}
+    return render_template('blank.html', review_id=review_id, abstract=review['abstract'], title=review['title'])
+
+
+@app.route('/recent_ftext_review', methods=['GET'])
+def recent_ftext_review():
+    """Get most recent ftext review, otherwise create one and return that"""
+    if not current_user.is_authenticated:
+        return "Sorry! This action is only available to logged-in users", 401, {
+            'ContentType': 'application/json'}
+
     user_id = current_user.db_id
-    idx = crud.save_ftext_review(abstract, user_id)
-    return json.dumps({'success': True, 'message': 'Review saved successfully', 'idx': idx}), 201, {
+    idx = crud.get_most_recent_ftext_review(user_id)
+    return json.dumps({'success': True, 'message': 'Review retrieved successfully', 'idx': idx}), 200, {
+        'ContentType': 'application/json'}
+
+
+@app.route('/createftext', methods=['POST'])
+def create_ftext_review():
+    if not current_user.is_authenticated:
+        return "Sorry! This action is only available to logged-in users", 401, {
+            'ContentType': 'application/json'}
+
+    idx = crud.create_ftext_review(current_user.db_id)
+    return json.dumps({'success': True, 'message': 'Review created successfully', 'idx': idx}), 201, {
         'ContentType': 'application/json'}
 
 
@@ -558,7 +583,6 @@ def update_ftext_title():
             'ContentType': 'application/json'}
 
     data = request.json
-    print(data)
     review_id = data['review_id']
     user_id = current_user.db_id
     title = data['title']
@@ -572,8 +596,13 @@ def update_ftext_title():
 
 
 @app.route('/saved', methods=['GET'])
+@login_required
 def saved():
     """ load saved reviews page """
+    if not current_user.is_authenticated:
+        return "Sorry! This action is only available to logged-in users", 401, {
+            'ContentType': 'application/json'}
+
     reviews = crud.get_saved_reviews(current_user.db_id)
     ftext_reviews = crud.get_ftext_reviews(current_user.db_id)
     return render_template('saved.html', reviews=reviews, ftext_reviews=ftext_reviews)
@@ -635,16 +664,16 @@ def download():
     return render_template('download.html')
 
 
-@app.route('/privacy', methods=['GET'])
-def privacy():
-    """ load privacy policy"""
-    return render_template('privacy.html')
-
-
-@app.route('/legal', methods=['GET'])
-def legal():
-    """ load ToS """
-    return render_template('legal.html')
+# @app.route('/privacy', methods=['GET'])
+# def privacy():
+#     """ load privacy policy"""
+#     return render_template('privacy.html')
+#
+#
+# @app.route('/legal', methods=['GET'])
+# def legal():
+#     """ load ToS """
+#     return render_template('legal.html')
 
 
 @app.route('/relevant_included', methods=['POST'])

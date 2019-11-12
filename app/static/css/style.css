@@ -4,8 +4,15 @@
 
 /*body { padding-bottom: 150px; }*/
 
-.navbar, .navbar-inverse, .navbar-nav, .navbar-default, .navbar-brand, #nav-search, #id-search, a.footer-link, #footer {
-    color: #d9edf7 !important;
+.navbar, .navbar-inverse, .navbar-nav, .navbar-default, .navbar-brand, #nav-search, #id-search, a.footer-link, #footer, .navbar-inverse .navbar-nav > li > a, .navbar-nav > a {
+    color: #e68c00 !important;
+    font-weight:bold;
+}
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 html,
@@ -24,6 +31,59 @@ body {
 #wrapper {
     min-height: 100%;
     position: relative;
+    padding-bottom: 80px;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+.checkbox {
+    position: relative;
+}
+
+.checkbox > input {
+    display: none;
+}
+
+.checkbox > label {
+    position: relative;
+    cursor: pointer;
+    padding: 0;
+}
+
+.checkbox > label:before {
+    content: '';
+    margin-right: 10px;
+    display: inline-block;
+    vertical-align: middle;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 4px;
+    border: .2rem solid lightgrey;
+}
+
+.checkbox > input:checked + label:before,
+.checkbox:hover > label:before {
+    background: #f35429;
+}
+
+.checkbox > input:checked + label:after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 10px;
+    background: white;
+    width: 2px;
+    height: 2px;
+    box-shadow: 2px 0 0 white,
+    4px 0 0 white,
+    4px -2px 0 white,
+    4px -4px 0 white,
+    4px -6px 0 white,
+    4px -8px 0 white;
+    transform: rotate(45deg);
 }
 
 /*nav {*/
@@ -31,22 +91,71 @@ body {
 /*}*/
 
 article {
-    padding-bottom: 100px;
+    /*padding-bottom: 100px;*/
     /* Height of the footer element */
+}
+
+footer > * {
+    margin: 0 1rem;
+    color: white;
+}
+
+footer > *:hover {
+    color: white;
 }
 
 footer {
     width: 100%;
-    height: 120px;
     position: absolute;
     bottom: 0;
     left: 0;
+    padding: 1rem;
+    display: flex;
+    justify-content: flex-end;
 }
 
 @media screen and (min-width: 750px) {
     #plot.home-plot {
         padding-left: 10%;
     }
+}
+
+.faq-collapsible {
+    font-size: 1.6rem;
+}
+
+.faq-collapsible > i {
+    transition: all .5s;
+}
+
+.faq-collapsible.collapsed > i {
+    transform: rotate(180deg);
+}
+
+.faq-collapsible:not(.collapsed) {
+    margin-bottom: 1rem;
+}
+
+.mt-2 {
+    margin-top: .5rem;
+}
+
+.collapse p {
+    margin: 0;
+    padding-bottom: 10px;
+}
+
+.blank-review {
+    display: flex;
+    justify-content: center;
+}
+
+.blockquote {
+    font-size: 100%;
+}
+
+.title-page {
+    margin-top: 3%;
 }
 
 .alert {
@@ -80,8 +189,8 @@ footer {
 
 @media screen and (max-width: 765px) {
     #plot {
-        padding-top: 100px !important;
-        padding-bottom: 150px !important;
+        padding-top: 70px !important;
+        padding-bottom: 40px !important;
     }
 
     #plot-dash {
@@ -99,6 +208,43 @@ footer {
     border-bottom-left-radius: 10px;
 }
 
+.has-tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+
+.has-tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: .5rem;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 1;
+    width: 250px;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -125px;
+    font-size: 1.5rem;
+}
+
+.has-tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+
+.flip-v-axis {
+    display: inline-block;
+    transform: scale(-1, 1);
+}
+
+.logo-brand {
+    font-family: Open Sans, sans-serif;
+    font-weight: bold;
+}
+
+
 .browse-item {
     display: flex;
 }
@@ -107,7 +253,7 @@ footer {
     align-self: center;
     margin-right: 1rem;
     min-width: 80px;
-    text-align:center;
+    text-align: center;
 }
 
 .progress_div {
@@ -131,10 +277,6 @@ footer {
 
     display: flex;
     align-items: center;
-}
-
-.navbar-inverse .navbar-nav > li > a, .navbar-nav > a {
-    color: #d9edf7 !important;
 }
 
 
