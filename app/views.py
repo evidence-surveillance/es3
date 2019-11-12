@@ -12,7 +12,8 @@ import dblib
 import plot
 import crud
 from app import app, mail, socketio, cache
-from forms import EmailPasswordForm, NewUserForm, ChangePasswordForm, ForgotPasswordForm, PasswordForm
+from forms import EmailPasswordForm, NewUserForm, ChangePasswordForm, ForgotPasswordForm, PasswordForm, \
+    RequestRegisterForm
 from user import User
 from celery import chord
 import random
@@ -476,7 +477,8 @@ def logout():
 @app.route('/login', methods=['GET'])
 def login():
     """ load the login page """
-    return render_template('login.html', loginform=EmailPasswordForm(), forgotpw=ForgotPasswordForm())
+    return render_template('login.html', loginform=EmailPasswordForm(), forgotpw=ForgotPasswordForm(),
+                           accessform=RequestRegisterForm())
 
 
 @app.route('/login', methods=['POST'])
@@ -491,14 +493,17 @@ def submit_login():
             registered_user = User.get(login_form.login_email.data)
             if registered_user is None or registered_user.password is None:
                 flash('Username is invalid', 'error')
-                return render_template('login.html', loginform=login_form, forgotpw=ForgotPasswordForm())
+                return render_template('login.html', loginform=login_form, forgotpw=ForgotPasswordForm(),
+                                       accessform=RequestRegisterForm())
             if not registered_user.check_password(login_form.password.data):
                 flash('Password is invalid', 'error')
-                return render_template('login.html', loginform=login_form, forgotpw=ForgotPasswordForm())
+                return render_template('login.html', loginform=login_form, forgotpw=ForgotPasswordForm(),
+                                       accessform=RequestRegisterForm())
             login_user(registered_user)
             return redirect(request.args.get('next') or url_for('index'))
         else:
-            return render_template('login.html', loginform=login_form, forgotpw=ForgotPasswordForm())
+            return render_template('login.html', loginform=login_form, forgotpw=ForgotPasswordForm(),
+                                   accessform=RequestRegisterForm())
 
 
 @app.route('/search', methods=['GET'])
@@ -912,6 +917,25 @@ def alter_users():
     return render_template('adminpanel.html', new_user=NewUserForm(), users=User.get_all())
 
 
+@app.route('/register', methods=['POST'])
+def register():
+    """
+    Registration of account
+    :return:
+    """
+    form = RequestRegisterForm()
+    if form.validate_on_submit():
+        msg = Message('ES3 Access Request', sender=config.MAIL_USERNAME, recipients=config.REQUEST_EMAIL_RECIPIENTS)
+        msg.body = '%s is requesting access to ES3. You may respond to them at: %s' % (
+            form.nickname.data, form.email.data,)
+        mail.send(msg)
+
+        flash('Access requested successfully.')
+    else:
+        flash('Please enter a valid email address')
+    return redirect(url_for('login'))
+
+
 @app.route('/reset', methods=["GET", "POST"])
 def reset():
     """
@@ -935,7 +959,8 @@ def reset():
         mail.send(msg)
         flash('Password reset email sent to ' + user.id)
         return redirect(url_for('login'))
-    return render_template('login.html', loginform=EmailPasswordForm(), forgotpw=ForgotPasswordForm())
+    return render_template('login.html', loginform=EmailPasswordForm(), forgotpw=ForgotPasswordForm(),
+                           accessform=RequestRegisterForm())
 
 
 @app.route('/reset/<token>', methods=["GET", "POST"])

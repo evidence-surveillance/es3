@@ -15,6 +15,15 @@
     z-index: 100;
 }
 
+.nav-tabs > li.active > a {
+    background-color: #eee !important;
+}
+
+.jumbotron.tab-content {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
 html,
 body {
     margin: 0;

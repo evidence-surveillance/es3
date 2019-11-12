@@ -516,8 +516,7 @@ $(document).ready(function () {
             });
 
 
-        }
-        if (window.location.pathname === '/blank') {
+        } else if (window.location.pathname === '/blank') {
             $(document).ready(function () {
 
 
@@ -584,7 +583,13 @@ $(document).ready(function () {
                 }
             });
         }
+
     });
+    $('#forgot-password').on('click', e => {
+        e.preventDefault();
+        $('#login-tabs a[href="#reset"]').tab('show');
+    });
+
     socket.on('search_update', function (msg) {
 
         $("#progress_txt").text(msg['msg']);
