@@ -1,13 +1,14 @@
 from flask_wtf import FlaskForm as Form
-from wtforms import StringField, PasswordField, RadioField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo
+from wtforms import StringField, PasswordField, RadioField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, Email, EqualTo, Length
 
 
 class EmailPasswordForm(Form):
     """
     Login form
     """
-    login_email = StringField('Email', validators=[DataRequired(message='Email address is required'), Email()])
+    login_email = StringField('Email', validators=[DataRequired(message='Email address is required'),
+                                                   Email(message='Email is invalid')])
     password = PasswordField('Password', validators=[DataRequired(message='Password is required')])
     submit = SubmitField(label='Login')
 
@@ -25,7 +26,8 @@ class NewUserForm(Form):
     """
     Register new user form
     """
-    new_email = StringField('Email', validators=[DataRequired(message='Email address is required'), Email()])
+    new_email = StringField('Email', validators=[DataRequired(message='Email address is required'),
+                                                 Email(message='Email is invalid')])
     nickname = StringField('Nickname', validators=[DataRequired(message='Nickname is required')])
     password = StringField('Initial Password', validators=[DataRequired(message='Password is required')])
 
@@ -39,7 +41,8 @@ class ForgotPasswordForm(Form):
     """
     Forgot password form
     """
-    forgot_email = StringField('Email', validators=[DataRequired(message='Email address is required'), Email()])
+    forgot_email = StringField('Email', validators=[DataRequired(message='Email address is required'),
+                                                    Email(message='Email is invalid')])
     submit = SubmitField(label='Reset Password')
 
 
@@ -59,6 +62,19 @@ class RequestRegisterForm(Form):
     """
     Request account creation form
     """
-    email = StringField('Email', validators=[DataRequired(message='Email address is required'), Email()])
+    email = StringField('Email', validators=[DataRequired(message='Email address is required'),
+                                             Email(message='Email is invalid')])
     nickname = StringField('Name', validators=[DataRequired(message='Name is required')])
     submit = SubmitField(label='Request Access')
+
+
+class ContactForm(Form):
+    """
+    Contact form
+    """
+    email = StringField('Email', validators=[DataRequired(message='Email address is required'),
+                                             Email(message='Email is invalid')])
+    nickname = StringField('Name', validators=[DataRequired(message='Name is required')])
+    content = TextAreaField('Message', render_kw={'rows': 8}, validators=[DataRequired(message='Message is required'),
+                                                                          Length(min=10, message="Message too short")])
+    submit = SubmitField(label='Send')

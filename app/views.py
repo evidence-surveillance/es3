@@ -13,7 +13,7 @@ import plot
 import crud
 from app import app, mail, socketio, cache
 from forms import EmailPasswordForm, NewUserForm, ChangePasswordForm, ForgotPasswordForm, PasswordForm, \
-    RequestRegisterForm
+    RequestRegisterForm, ContactForm
 from user import User
 from celery import chord
 import random
@@ -917,6 +917,30 @@ def alter_users():
     return render_template('adminpanel.html', new_user=NewUserForm(), users=User.get_all())
 
 
+@app.route('/contact', methods=["GET", "POST"])
+def contact():
+    """
+    Conctact page
+    :return:
+    """
+    if request.method == 'POST':
+        form = ContactForm()
+        if form.validate_on_submit():
+            msg = Message('ES3 Message', sender=config.MAIL_USERNAME, bcc=config.REQUEST_EMAIL_RECIPIENTS,
+                          reply_to=form.email.data)
+            msg.body = '%s (%s) has sent a message via the contact form on ES3:' % (
+                form.nickname.data, form.email.data,)
+            msg.body += '\n \n' + form.content.data
+            mail.send(msg)
+            flash('Message sent')
+        else:
+            flash(', '.join(form.email.errors + form.nickname.errors + form.content.errors))
+        return redirect(url_for('contact'))
+
+    elif request.method == 'GET':
+        return render_template('contact.html', contact_form=ContactForm())
+
+
 @app.route('/register', methods=['POST'])
 def register():
     """
@@ -925,8 +949,9 @@ def register():
     """
     form = RequestRegisterForm()
     if form.validate_on_submit():
-        msg = Message('ES3 Access Request', sender=config.MAIL_USERNAME, recipients=config.REQUEST_EMAIL_RECIPIENTS)
-        msg.body = '%s is requesting access to ES3. You may respond to them at: %s' % (
+        msg = Message('ES3 Access Request', sender=config.MAIL_USERNAME, bcc=config.REQUEST_EMAIL_RECIPIENTS,
+                      reply_to=form.email.data)
+        msg.body = '%s (%s) is requesting access to ES3.' % (
             form.nickname.data, form.email.data,)
         mail.send(msg)
 

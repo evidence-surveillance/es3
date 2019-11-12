@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+
+
+                <!-- Tab panes -->
+                <div class="jumbotron">
+                    <h2>Contact</h2>
+                    {{ wtf.quick_form(contact_form, action=url_for('contact')) }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
