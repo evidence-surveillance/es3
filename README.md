@@ -1,4 +1,4 @@
-# trial2rev
+# ES3 (Formerly known as trial2rev)
 
 ## Synopsis
 
@@ -8,7 +8,7 @@
 ## Getting Started
 
 *(Please note that there are a number of steps involved in getting the system up and running, and this guide is
- fairly minimal, assumes familiarity with the trial2rev website and experience working with the tools listed below, and is **not intended for use in production**. We may consider Dockerizing the system or providing a more comprehensive step-by-step guide
+ fairly minimal, assumes familiarity with the es3 website and experience working with the tools listed below, and is **not intended for use in production**. We may consider Dockerizing the system or providing a more comprehensive step-by-step guide
  in future if there is demand for this)*
 
 
@@ -30,10 +30,9 @@ The following assumes you have all of the recommended tools listed above install
 
 #### 2. Create and initialize virtualenv for the project:
 
-    $ virtualenv trial2rev
-    $ cd trial2rev
-    $ source bin/activate
-    $ (trial2rev) pip install -r requirements.txt
+    $ virtualenv venv
+    $ source venv/bin/activate
+    $ (venv) pip install -r requirements.txt
 
 #### 3. Create `config.py` file for your local setup based on `config.py.example`:
 Being sure to include all of the config values listed, including your PostgreSQL username & password, the name of the database you'll be creating (`trial2rev` in this example),
@@ -41,7 +40,7 @@ flask secret key, EUtils API key, mail server details, etc.
 
 
 #### 4. Connect to PostgreSQL and create the database:
-    $ (trial2rev) psql postgres
+    $ (venv) psql postgres
     $ postgres=> CREATE DATABASE trial2rev;
     $ postgres=> \q
 
@@ -54,7 +53,7 @@ entries, and trial publications by executing the relevant methods in
 `remote_tasks.py`. It is recommended that you first pull trial registry entries from
 ClinicalTrials.gov using
 
-    $ (trial2rev) python
+    $ (venv) python
     $ >>> import remote_tasks as rt
     $ >>> rt.update_tregistry_entries(5000)
 
@@ -95,14 +94,14 @@ plot of the trial registry tfidf scores. You can do this by calling the method:
 
 ### Web server
 Now, everything should be ready for you to start the webserver and browse your local
-version of trial2rev!
+version of ES3!
 
 #### 1. Run the app on your local machine:
 
-    $ (trial2rev) python run.py
+    $ (venv) python run.py
 
 #### 2. Start the celery worker:
-    $ (trial2rev) celery -A app.celery_inst worker --loglevel=info
+    $ (venv) celery -A app.celery_inst worker --loglevel=info
 
 
 #### 3. Log in:

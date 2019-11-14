@@ -8,7 +8,7 @@ import dblib
 
 class User(UserMixin):
     """
-    A registered user that can log into the trial2rev system
+    A registered user that can log into the es3 system
     """
 
     def __init__(self, email, nickname, password, permissions):

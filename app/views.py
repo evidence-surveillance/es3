@@ -393,13 +393,6 @@ def unique_reviews_trials():
                        }, default=str), 200, {
                'ContentType': 'application/json'}
 
-
-# @app.route('/howto')
-# def howto():
-#     """ load how to page  """
-#     return render_template('howto.html')
-
-
 @cache.cached(timeout=60)
 @app.route('/browse')
 def browse():
@@ -667,18 +660,6 @@ def download_matrix(detail):
 def download():
     """ load download page """
     return render_template('download.html')
-
-
-# @app.route('/privacy', methods=['GET'])
-# def privacy():
-#     """ load privacy policy"""
-#     return render_template('privacy.html')
-#
-#
-# @app.route('/legal', methods=['GET'])
-# def legal():
-#     """ load ToS """
-#     return render_template('legal.html')
 
 
 @app.route('/relevant_included', methods=['POST'])
