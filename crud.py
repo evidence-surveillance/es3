@@ -621,7 +621,7 @@ def get_reviews_with_ids(ids):
     return matches if matches else None
 
 
-@cache.memoize(timeout=86400)
+@cache.memoize(timeout=7200)
 def data_summary():
     """ get a summary of data to display on index """
     conn = dblib.create_con(VERBOSE=True)
@@ -640,6 +640,7 @@ def data_summary():
             ) AS tr, (
                 SELECT count(1)
                 FROM review_rtrial
+                WHERE relationship = 'included'
             ) as links, (
                 SELECT count(1)
                 FROM systematic_reviews
