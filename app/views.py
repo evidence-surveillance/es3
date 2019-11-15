@@ -393,6 +393,7 @@ def unique_reviews_trials():
                        }, default=str), 200, {
                'ContentType': 'application/json'}
 
+
 @cache.cached(timeout=60)
 @app.route('/browse')
 def browse():
@@ -877,6 +878,12 @@ def alter_users():
         if form.validate_on_submit():
             if User.get(form.new_email.data) is None:
                 User(form.new_email.data, form.nickname.data, form.password.data, form.type.data)
+
+                msg = Message('ES3 Access Request', sender=config.MAIL_USERNAME,
+                              recipients=[form.new_email.data])
+                msg.html = render_template('registration_email.html', user=form.new_email.data, pw=form.password.data)
+                mail.send(msg)
+
                 flash('New user ' + form.new_email.data + ' created successfully')
             else:
                 flash('User already exists')

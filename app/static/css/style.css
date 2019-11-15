@@ -6,7 +6,8 @@
 
 .navbar, .navbar-inverse, .navbar-nav, .navbar-default, .navbar-brand, #nav-search, #id-search, a.footer-link, #footer, .navbar-inverse .navbar-nav > li > a, .navbar-nav > a {
     color: #e68c00 !important;
-    font-weight:bold;
+    font-weight: bold;
+    font-size: 1.6rem;
 }
 
 .navbar {
@@ -165,7 +166,7 @@ footer {
 }
 
 .title-page {
-    margin-top: 3%;
+    margin-top: 40px;
 }
 
 .alert {
