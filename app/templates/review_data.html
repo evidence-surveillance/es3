@@ -4,7 +4,7 @@
             <h3><a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ review.review_id }}"
                    target="_blank">{{ review.title|safe }}</a><br>
                 <small><em>{{ review.authors }} - {{ review.source|safe }} <span
-                        id="pub_date">{{ review.publish_date_full.strftime('%Y-%m-%d') }}</span></em></small>
+                        id="pub_date">{{ review.publish_date_full.strftime('%Y-%m-%d') if review.publsh_date_full else review.publish_date }}</span></em></small>
             </h3>
         </div>
 
