@@ -257,12 +257,14 @@ $(document).ready(function () {
                 p.add_layout(label);
             }
 
+            if (window.location.pathname !== '/blank') {
+                $(".progress_div").slideUp(1000);
+            }
+
             if (!$.trim(plot.html())) {
                 Bokeh.Plotting.show(p, plot);
                 plot.slideDown(2000);
-                if (window.location.pathname !== '/blank') {
-                    $(".progress_div").slideUp(1000);
-                }
+
 
             } else {
                 plot.animate({'opacity': 0.01}, 1000, function () {
