@@ -12,9 +12,9 @@ import dblib
 import plot
 import crud
 from app import app, mail, socketio, cache
-from forms import EmailPasswordForm, NewUserForm, ChangePasswordForm, ForgotPasswordForm, PasswordForm, \
+from .forms import EmailPasswordForm, NewUserForm, ChangePasswordForm, ForgotPasswordForm, PasswordForm, \
     RequestRegisterForm, ContactForm
-from user import User
+from .user import User
 from celery import chord
 import random
 import utils

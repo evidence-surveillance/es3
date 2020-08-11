@@ -203,7 +203,7 @@
    limitations under the License.
 """
 
-from urllib2 import unquote
+from urllib.parse import unquote
 import utils
 
 PUNCS_WE_DONT_LIKE = "[],.()<>'/?;:\"&"

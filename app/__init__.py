@@ -8,7 +8,7 @@ from flask_socketio import SocketIO
 from flask_bootstrap import Bootstrap
 from flask_mail import Mail
 from flask_bootstrap import WebCDN
-from flask_cache import Cache
+from flask_caching import Cache
 
 app = Flask(__name__)  # init Flask
 
@@ -35,4 +35,4 @@ app.secret_key = config.APP_SECRET_KEY
 
 socketio = SocketIO(app, message_queue='amqp://localhost')
 
-import views
+from . import views

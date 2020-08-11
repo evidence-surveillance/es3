@@ -1,6 +1,6 @@
 import re
-from urllib2 import unquote
-import httplib
+from urllib.parse import unquote
+from http import client as httplib
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -62,7 +62,7 @@ def patch_http_response_read(func):
     def inner(*args):
         try:
             return func(*args)
-        except httplib.IncompleteRead, e:
+        except httplib.IncompleteRead as e:
             return e.partial
 
     return inner

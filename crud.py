@@ -4,7 +4,7 @@ import untangle
 from datetime import datetime
 import config
 import psycopg2.extras
-import httplib
+from http import client as httplib
 import utils
 import request_data
 from eutils import Client
