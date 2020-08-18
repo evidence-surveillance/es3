@@ -5,14 +5,12 @@ import numpy as np
 from scipy.sparse import csr_matrix
 import pickle
 import psycopg2.extras
-import sys
 
-reload(sys)
 import dblib
 from datetime import timedelta
 import config
 import psycopg2.extras
-from urllib2 import urlopen
+from urllib.request import urlopen
 import zipfile
 import glob
 import bot
@@ -35,7 +33,6 @@ from subprocess import call
 import matfac as mf
 import requests
 
-sys.setdefaultencoding("utf8")
 
 eutils_key = config.EUTILS_KEY
 
@@ -85,7 +82,7 @@ def matfac_results(fname):
         sorted = col.argsort()[::-1][0:100]
         top_trials = nct_ids[sorted]
         for trial in top_trials:
-            print inverse_vocab[c], trial
+            print(inverse_vocab[c], trial)
             cur.execute("SELECT * FROM systematic_reviews WHERE  review_id = %s;", (inverse_vocab[c],))
             review = cur.fetchall()
             if review:
@@ -142,7 +139,7 @@ def populate_reviews(period):
                                                        '%Y/%m/%d'), 'maxdate': '3000'})
     json = r.json()
     pmids = json['esearchresult']['idlist']
-    print len(pmids)
+    print(len(pmids))
     segments = utils.chunks(pmids, 100)
     ec = Client(api_key=eutils_key)
     for s in segments:
@@ -154,7 +151,7 @@ def populate_reviews(period):
                     eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
                     requests.exceptions.SSLError,
                     requests.exceptions.ConnectionError) as e:
-                print e
+                print(e)
                 time.sleep(5)
         a_iter = iter(articles)
         while True:
@@ -162,19 +159,19 @@ def populate_reviews(period):
                 article = a_iter.next()
             except StopIteration:
                 break
-            print '-----------------' + article.pmid + '-------------------------'
+            print('-----------------' + article.pmid + '-------------------------')
             if article.doi is not None:
                 ids = bot.check_trialpubs_nctids(article.pmid, article.doi)
             else:
                 ids = bot.check_trialpubs_nctids(article.pmid)
             if ids:
                 if ids.pmids:
-                    print ids.pmids
+                    print(ids.pmids)
                     count = crud.articles_with_nctids(tuple(x for x in ids.pmids))
-                    print count
+                    print(count)
                     if count and len(count) > 0:
-                        print 'articles with links = ' + str(len(count))
-                        print 'inserting ' + str(article.pmid)
+                        print('articles with links = ' + str(len(count)))
+                        print('inserting ' + str(article.pmid))
                         crud.pubmedarticle_to_db(article, 'systematic_reviews')
                         for trialpub in count:
                             crud.review_publication(article.pmid, trialpub, 9)
@@ -184,15 +181,15 @@ def populate_reviews(period):
                                                   nickname='crossrefbot')
                 if ids.nctids:
                     crud.pubmedarticle_to_db(article, 'systematic_reviews')
-                    print 'nct ids in crossref = ' + str(len(ids.nctids))
+                    print('nct ids in crossref = ' + str(len(ids.nctids)))
                     for nct_id in ids.nctids:
                         crud.review_trial(article.pmid, nct_id, False, 'included', 'crossrefbot', 9)
                 if not ids.nctids and not ids.pmids:
-                    print 'found nothing'
+                    print('found nothing')
             else:
-                print 'nothing'
+                print('nothing')
             if 'Cochrane' in article.jrnl:
-                print 'Cochrane'
+                print('Cochrane')
                 crud.pubmedarticle_to_db(article, 'systematic_reviews')
                 bot.cochranebot(article.doi, article.pmid)
                 bot.cochrane_ongoing_excluded(article.doi, article.pmid)
@@ -205,7 +202,7 @@ def populate_reviews(period):
                 if not new_users:
                     new_users = {'users': []}
                 if not {17, 9} & set(new_users['users']):
-                    print 'deleting ' + str(new_users['users']), article.pmid
+                    print('deleting ' + str(new_users['users']), article.pmid)
                     cur.execute(
                         "delete from votes where link_id in (select id from review_rtrial where review_id = %s);",
                         (article.pmid,))
@@ -218,7 +215,7 @@ def populate_reviews(period):
                     conn.commit()
                 conn.close()
             else:
-                print 'not cochrane'
+                print('not cochrane')
 
 
 def fill_missing_bots():
@@ -232,7 +229,7 @@ def fill_missing_bots():
     for r in res:
         if 'Cochrane' in r['source']:
             if len({17, 9} & set(r['users'])) < 2:
-                print r['users']
+                print(r['users'])
                 cb1 = Thread(target=bot.cochranebot, args=(r['doi'], r['review_id']))
                 cb1.start()
                 xrb = Thread(target=bot.check_citations, args=(r['review_id'],))
@@ -244,7 +241,7 @@ def fill_missing_bots():
                 cb2.join()
         else:
             if not {9} & set(r['users']):
-                print r['users']
+                print(r['users'])
                 bot.check_citations(r['review_id'])
         cur.execute("select rt.review_id, json_agg(distinct v.user_id) as users from review_rtrial rt"
                     " inner join votes v on rt.id = v.link_id where rt.review_id = %s group by"
@@ -253,7 +250,7 @@ def fill_missing_bots():
         if not new_users:
             new_users = {'users': []}
         if not {17, 9} & set(new_users['users']):
-            print 'deleting ' + str(new_users['users']), r['review_id']
+            print('deleting ' + str(new_users['users']), r['review_id'])
             cur.execute("delete from votes where link_id in (select id from review_rtrial where review_id = %s);",
                         (r['review_id'],))
             conn.commit()
@@ -294,10 +291,10 @@ def update_trial_publications(period):
                                 'tool': crud.eutils_tool, 'api_key': eutils_key, 'date_type': 'edat',
                                 'mindate': (datetime.now().date() - timedelta(days=period)).strftime(
                                     '%Y/%m/%d'), 'maxdate': 3000})
-    print r.url
+    print(r.url)
     json = r.json()
     pmids = json['esearchresult']['idlist']
-    print pmids
+    print(pmids)
     segments = utils.chunks(pmids, 100)
     for s in segments:
         while True:
@@ -308,10 +305,10 @@ def update_trial_publications(period):
                     eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
                     requests.exceptions.SSLError,
                     requests.exceptions.ConnectionError) as e:
-                print e
+                print(e)
                 time.sleep(5)
         for a in articles:
-            print a.pmid
+            print(a.pmid)
             if a.nct_ids:
                 ids = a.nct_ids
                 crud.pubmedarticle_to_db(a, 'trial_publications')
@@ -328,7 +325,7 @@ def update_tregistry_entries(period):
     base_url = 'https://clinicaltrials.gov/ct2/results/download_studies?lupd_s={}&lupd_e={}&down_fmt=xml'.format(
         (datetime.now().date() - timedelta(days=period)).strftime(
             '%m/%d/%Y'), datetime.now().date().strftime('%m/%d/%Y'))
-    print base_url
+    print(base_url)
     response = urlopen(base_url)
     local_filename = "test_folder.zip"
     CHUNK = 16 * 1024
@@ -357,7 +354,7 @@ def update_bots(period=None):
     reviews = cur.fetchall()
     conn.close()
     for rev in reviews:
-        print rev['review_id']
+        print(rev['review_id'])
         bb1 = Thread(target=bot.docsim, args=(rev['review_id'],))
         bb1.start()
         bb2 = Thread(target=bot.basicbot2, args=(rev['review_id'],))
@@ -415,18 +412,18 @@ def upload_models():
     tsne_matrix = utils.most_recent_tsne()
     tsne_image = utils.most_recent_tsne_img()
     for x in [tfidf_labels, tsne_matrix, tsne_image]:
-        print datetime.fromtimestamp(os.path.getmtime(x))
+        print(datetime.fromtimestamp(os.path.getmtime(x)))
         if datetime.fromtimestamp(os.path.getmtime(x)) < datetime.now() - timedelta(days=2):
-            print 'too old!'
+            print('too old!')
             return
     for x in [tfidf_labels, tsne_matrix, tsne_image, tfidf_matrix, tfidf_vec]:
         cmd = 'scp -i ' + config.SCP_KEYFILE + ' ' + x + ' ' + config.SCP_USER + '@' + config.SCP_HOST + ':' + replace_local_path(
             x)
-        print cmd
+        print(cmd)
         call(cmd.split())
     for x in [tfidf_labels, tfidf_matrix]:
         cmd = 'scp -i ' + config.SCP2_KEYFILE + ' ' + x + ' ' + config.SCP2_USER + '@' + config.SCP2_HOST + ':' + config.REMOTE_PATH2+'/models/tfidf/'+x.split('/')[-1]
-        print cmd
+        print(cmd)
         call(cmd.split())
 
 
