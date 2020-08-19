@@ -148,7 +148,7 @@ def populate_reviews(period):
                 articles = ec.efetch(db='pubmed', id=s)
                 break
             except (
-                    eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
+                    eutils.EutilsNCBIError, eutils.EutilsRequestError,
                     requests.exceptions.SSLError,
                     requests.exceptions.ConnectionError) as e:
                 print(e)
@@ -156,7 +156,7 @@ def populate_reviews(period):
         a_iter = iter(articles)
         while True:
             try:
-                article = a_iter.next()
+                article = next(a_iter)
             except StopIteration:
                 break
             print('-----------------' + article.pmid + '-------------------------')
@@ -294,7 +294,6 @@ def update_trial_publications(period):
     print(r.url)
     json = r.json()
     pmids = json['esearchresult']['idlist']
-    print(pmids)
     segments = utils.chunks(pmids, 100)
     for s in segments:
         while True:
@@ -302,14 +301,14 @@ def update_trial_publications(period):
                 articles = ec.efetch(db='pubmed', id=s)
                 break
             except (
-                    eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
+                    eutils.EutilsNCBIError, eutils.EutilsRequestError,
                     requests.exceptions.SSLError,
                     requests.exceptions.ConnectionError) as e:
                 print(e)
                 time.sleep(5)
         for a in articles:
-            print(a.pmid)
-            if a.nct_ids:
+            if hasattr(a, 'nct_ids'):
+                print(a.nct_ids)
                 ids = a.nct_ids
                 crud.pubmedarticle_to_db(a, 'trial_publications')
                 for id in ids:

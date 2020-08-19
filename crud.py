@@ -39,7 +39,7 @@ def get_saved_reviews(user_id):
     res = cur.fetchall()
     if not res:
         return None
-    reviews = list(zip(*res)[0])
+    reviews = list(list(zip(*res))[0])
     return get_reviews_with_ids(reviews)
 
 
@@ -272,7 +272,7 @@ def get_locked():
         "SELECT review_id FROM systematic_reviews WHERE included_complete = TRUE;")
     reviews = cur.fetchall()
     conn.close()
-    return list(zip(*reviews)[0]) if reviews else None
+    return list(list(zip(*reviews))[0]) if reviews else None
 
 
 def review_publication(review_id, publication_id, user_id):
@@ -812,7 +812,7 @@ def articles_with_nctids(pmid_list):
     cur.execute("select distinct(trialpub_id) from trialpubs_rtrial where trialpub_id in %s;", (tuple(pmid_list),))
     matches = cur.fetchall()
     conn.close()
-    return list(zip(*matches)[0]) if matches else None
+    return list(list(zip(*matches))[0]) if matches else None
 
 
 def linked_nctids(pmid):
@@ -822,7 +822,7 @@ def linked_nctids(pmid):
     cur.execute("select nct_id from trialpubs_rtrial where trialpub_id = %s;", (pmid,))
     ids = cur.fetchall()
     conn.close()
-    return list(zip(*ids)[0]) if ids else None
+    return list(list(zip(*ids))[0]) if ids else None
 
 
 def related_reviews(review_id):

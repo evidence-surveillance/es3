@@ -45,11 +45,11 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                 paset = ec.efetch(db='pubmed', id=review_id)
                 break
             except (
-                    eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError, requests.exceptions.SSLError,
+                    eutils.EutilsNCBIError, eutils.EutilsRequestError, requests.exceptions.SSLError,
                     requests.exceptions.ConnectionError) as e:
                 print(e)
                 time.sleep(5)
-        pa = iter(paset).next()
+        pa = next(iter(paset))
         if hasattr(pa, 'doi'):
             review_doi = pa.doi
         if not review_doi:
@@ -86,7 +86,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                         try:
                             esr = ec.esearch(db='pubmed', term=' OR '.join(['"' + doi + '"[AID]' for doi in dois]))
                             break
-                        except (eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
+                        except (eutils.EutilsNCBIError, eutils.EutilsRequestError,
                                 requests.exceptions.SSLError, requests.exceptions.ConnectionError,
                                 lxml.etree.XMLSyntaxError) as e:
                             print(e)
@@ -96,14 +96,14 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                             try:
                                 paset = ec.efetch(db='pubmed', id=esr.ids)
                                 break
-                            except (eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
+                            except (eutils.EutilsNCBIError, eutils.EutilsRequestError,
                                     requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
                                 print(e)
                                 time.sleep(5)
                         pa_iter = iter(paset)
                         while True:
                             try:
-                                pma = pa_iter.next()
+                                pma = next(pa_iter)
                             except StopIteration:
                                 break
                             if pma.doi is not None and pma.doi in dois:
@@ -130,14 +130,14 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                         try:
                             paset = ec.efetch(db='pubmed', id=check_metadata)
                             break
-                        except (eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError,
+                        except (eutils.EutilsNCBIError, eutils.EutilsRequestError,
                                 requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
                             print(e)
                             time.sleep(5)
                     pa_iter = iter(paset)
                     while True:
                         try:
-                            pma = pa_iter.next()
+                            pma = next(pa_iter)
                         except StopIteration:
                             break
                         if pma.doi is not None and pma.doi in dois:
@@ -180,14 +180,14 @@ def check_citations(review_id, sess_id=None, review_doi=None):
         try:
             articles = ec.efetch(db='pubmed', id=review_id)
             break
-        except (eutils.exceptions.EutilsNCBIError, eutils.exceptions.EutilsRequestError, requests.exceptions.SSLError,
+        except (eutils.EutilsNCBIError, eutils.EutilsRequestError, requests.exceptions.SSLError,
                 requests.exceptions.ConnectionError) as e:
             print(e)
             time.sleep(5)
     a_iter = iter(articles)
     while True:
         try:
-            article = a_iter.next()
+            article = next(a_iter)
         except StopIteration:
             break
         print('-----------------' + article.pmid + '-------------------------')

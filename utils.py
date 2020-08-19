@@ -3,7 +3,7 @@ from urllib.parse import unquote
 from http import client as httplib
 import requests
 from requests.adapters import HTTPAdapter
-from urllib3.util import Retry
+from urllib3.util.retry import Retry
 import glob
 import os
 import config
@@ -33,7 +33,7 @@ def is_doi(str):
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i + n]
 
 
