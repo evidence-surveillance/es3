@@ -1,3 +1,6 @@
+from eventlet import monkey_patch
+monkey_patch()
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 import crud
 import scipy

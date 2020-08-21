@@ -11,7 +11,7 @@
         </div>
         <div class="row">
             <div class="col-sm-6 col-sm-offset-3">
-                {{ wtf.quick_form(changepw_form, action=url_for('reset_with_token', token=token)) }}
+                {{ wtf.quick_form(form, action=url_for('reset_with_token', token=token)) }}
             </div><!--/col-sm-6-->
         </div><!--/row-->
     </div>
