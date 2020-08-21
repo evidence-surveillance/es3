@@ -119,7 +119,7 @@ def remove_bot_votes(bot_id):
     """ remove all votes from the specified bot"""
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor()
-    cur.execute("DELETE FROM srss.public.votes WHERE srss.public.votes.user_id = %s;", (bot_id,))
+    cur.execute("DELETE FROM es3.public.votes WHERE es3.public.votes.user_id = %s;", (bot_id,))
     conn.commit()
     conn.close()
 
