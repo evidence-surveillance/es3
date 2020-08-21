@@ -21,6 +21,7 @@ app.extensions['bootstrap']['cdns']['jquery'] = WebCDN(
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
+#app.config['SERVER_NAME'] = 'es3-bidh.sydney.edu.au'
 #app.config['MAIL_SERVER'] = config.MAIL_SERVER
 #app.config['MAIL_PORT'] = config.MAIL_PORT
 #app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
@@ -40,6 +41,6 @@ celery_inst.conf.update(app.config)
 
 app.secret_key = config.APP_SECRET_KEY
 
-socketio = SocketIO(app, message_queue='amqp://localhost')
+socketio = SocketIO(app, message_queue='amqp://localhost', cors_allowed_origins='*')
 
 from . import views

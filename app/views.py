@@ -983,6 +983,10 @@ def reset():
     send reset password email to specified user email
     @return: refreshed page indicating success or failure
     """
+    print(url_for('login'))
+    print(url_for('login', _external=True))
+    print(url_for('index'))
+    print(url_for('index', _external=True))
     form = ForgotPasswordForm()
     if form.validate_on_submit():
         user = User.get(form.forgot_email.data)
@@ -1033,7 +1037,7 @@ def reset_with_token(token):
         user.change_password(user.set_password(password))
         login_user(user)
         flash('Password changed successfully!')
-        return redirect(url_for('main'))
+        return redirect(url_for('index'))
     return render_template('reset_with_token.html', form=form, token=token)
 
 
