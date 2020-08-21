@@ -42,7 +42,6 @@ class User(UserMixin):
             self.db_id = user['id']
         conn.close()
 
-
     def set_password(self, password):
         """
         gen password hash and salt
@@ -61,11 +60,11 @@ class User(UserMixin):
         cur = conn.cursor()
         cur.execute(
             "UPDATE users set (salted_password, salt) = (%s, %s) where (user_name) = (%s);",
-            (hashed_password[0], hashed_password[1],self.id ))
+            (hashed_password[0], hashed_password[1], self.id))
         conn.commit()
         conn.close()
 
-    def check_password(self,user_password):
+    def check_password(self, user_password):
         """
         verify that user_password matches password belonging to this user
         @param user_password:
@@ -120,10 +119,9 @@ class User(UserMixin):
             cursor.execute("SELECT * from users where user_name = (%s);", (id,))
             user = cursor.fetchone()
             if user is not None:
-                return User(user['user_name'], user['nickname'], user['salted_password'],user['user_type'])
+                return User(user['user_name'], user['nickname'], user['salted_password'], user['user_type'])
             else:
                 return None
-
 
     @classmethod
     def get_all(cls):
@@ -134,7 +132,5 @@ class User(UserMixin):
         cursor = conn.cursor()
         cursor.execute("select user_name from users;")
         usrs = cursor.fetchall()
-        objs = map(lambda u: cls.get(u),list(zip(*usrs)[0]))
+        objs = map(lambda u: cls.get(u), list(list(zip(*usrs))[0]))
         return objs
-
-

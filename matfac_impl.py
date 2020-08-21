@@ -85,7 +85,7 @@ def _matfac_trials():
         incl = cur.fetchall()
         if not incl:
             continue
-        incl = list(zip(*incl)[0])
+        incl = list(list(zip(*incl))[0])
         if len(incl) > 2:
             sorted = col.argsort()[::-1][:100]
             top_trials = nct_ids[sorted].flatten()
