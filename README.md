@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-[A shared space for humans and machines to capture links between systematic reviews and clinical trials](http://surveillance-chi.mq.edu.au/)
+[A shared space for humans and machines to capture links between systematic reviews and clinical trials](http://es3-bidh.sydney.edu.au/)
 
 
 ## Getting Started
