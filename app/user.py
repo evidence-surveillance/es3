@@ -24,7 +24,7 @@ class User(UserMixin):
         cur.execute("SELECT * FROM users WHERE user_name = %s", (email,))
         user = cur.fetchone()
         if user is None:
-            self.id = unicode(email)
+            self.id = str(email)
             password, salt = self.set_password(password)
             self.permissions = permissions
             self.nickname = nickname
