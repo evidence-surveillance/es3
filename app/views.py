@@ -4,7 +4,7 @@ import json
 import psycopg2.extras
 from flask import render_template, request, url_for, redirect, flash, send_file, abort
 from flask_login import login_required, LoginManager, login_user, logout_user, current_user
-#from flask_mail import Message
+# from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
 import bot
 import config
@@ -63,6 +63,15 @@ def get_plot():
                                    'title': review_data['title']}
          }), 200, {
                'ContentType': 'application/json'}
+
+
+@socketio.on('get_trial')
+def trial_data(data):
+    trial_id = data['trial_id']
+    trial = crud.get_trial_data(trial_id)
+    socketio.emit('trial_data', {
+        'trial': trial
+    }, room=request.sid)
 
 
 @socketio.on('refresh_related')
@@ -506,6 +515,12 @@ def search():
     return render_template('reviewdetail.html')
 
 
+@app.route('/trial', methods=['GET'])
+def trial():
+    """ load trial page """
+    return render_template('trial.html')
+
+
 @app.route('/blank', methods=['GET'])
 @login_required
 def blank():
@@ -879,16 +894,17 @@ def alter_users():
             if User.get(form.new_email.data) is None:
                 User(form.new_email.data, form.nickname.data, form.password.data, form.type.data)
 
-                #msg = Message('ES3 Access Request', sender=config.MAIL_USERNAME,
+                # msg = Message('ES3 Access Request', sender=config.MAIL_USERNAME,
                 #              recipients=[form.new_email.data])
-                #msg.html = render_template('registration_email.html', user=form.new_email.data, pw=form.password.data)
+                # msg.html = render_template('registration_email.html', user=form.new_email.data, pw=form.password.data)
                 data = {
-                   'Messages': [
+                    'Messages': [
                         {"From": {"Email": config.MAIL_USERNAME, "Name": config.MAIL_SENDER_NAME},
                          "To": [{"Email": form.new_email.data}],
                          "Subject": "ES3 Access Request",
-                         "HTMLPart": render_template('registration_email.html', user=form.new_email.data, pw=form.password.data)
-                    }]
+                         "HTMLPart": render_template('registration_email.html', user=form.new_email.data,
+                                                     pw=form.password.data)
+                         }]
                 }
                 mail.send.create(data=data)
 
@@ -922,21 +938,22 @@ def contact():
     if request.method == 'POST':
         form = ContactForm()
         if form.validate_on_submit():
-            #msg = Message('ES3 Message', sender=config.MAIL_USERNAME, bcc=config.REQUEST_EMAIL_RECIPIENTS,
+            # msg = Message('ES3 Message', sender=config.MAIL_USERNAME, bcc=config.REQUEST_EMAIL_RECIPIENTS,
             #              reply_to=form.email.data)
-            #msg.body = '%s (%s) has sent a message via the contact form on ES3:' % (
+            # msg.body = '%s (%s) has sent a message via the contact form on ES3:' % (
             #    form.nickname.data, form.email.data,)
-            #msg.body += '\n \n' + form.content.data
-            #mail.send(msg)
+            # msg.body += '\n \n' + form.content.data
+            # mail.send(msg)
             data = {
-                   'Messages': [
-                        {"From": {"Email": config.MAIL_USERNAME, "Name": config.MAIL_SENDER_NAME},
-                         "To": [{"Email": config.REQUEST_EMAIL_RECIPIENT}],
-                         "Subject": "ES3 Message",
-                         "ReplyTo": form.email.data,
-                         "TextPart": '%s (%s) has sent a message via the contact form on ES3: \n \n %s' % (form.nickname.data, form.email.data, form.content.data,)
-                    }]
-                }
+                'Messages': [
+                    {"From": {"Email": config.MAIL_USERNAME, "Name": config.MAIL_SENDER_NAME},
+                     "To": [{"Email": config.REQUEST_EMAIL_RECIPIENT}],
+                     "Subject": "ES3 Message",
+                     "ReplyTo": form.email.data,
+                     "TextPart": '%s (%s) has sent a message via the contact form on ES3: \n \n %s' % (
+                         form.nickname.data, form.email.data, form.content.data,)
+                     }]
+            }
             mail.send.create(data=data)
             flash('Message sent')
         else:
@@ -955,19 +972,19 @@ def register():
     """
     form = RequestRegisterForm()
     if form.validate_on_submit():
-        #msg = Message('ES3 Access Request', sender=config.MAIL_USERNAME, bcc=config.REQUEST_EMAIL_RECIPIENTS,
+        # msg = Message('ES3 Access Request', sender=config.MAIL_USERNAME, bcc=config.REQUEST_EMAIL_RECIPIENTS,
         #              reply_to=form.email.data)
-        #msg.body = '%s (%s) is requesting access to ES3.' % (
+        # msg.body = '%s (%s) is requesting access to ES3.' % (
         #    form.nickname.data, form.email.data,)
-        #mail.send(msg)
+        # mail.send(msg)
         data = {
             'Messages': [
-            {"From": {"Email": config.MAIL_USERNAME, "Name": config.MAIL_SENDER_NAME},
-            "To": [{"Email": form.new_email.data}],
-            "Subject": "ES3 Access Request",
-            "ReplyTo": form.email.data,
-            "TextPart": "%s (%s) is requesting access to ES3." % (form.nickname.data, form.email.data,)
-            }]
+                {"From": {"Email": config.MAIL_USERNAME, "Name": config.MAIL_SENDER_NAME},
+                 "To": [{"Email": form.new_email.data}],
+                 "Subject": "ES3 Access Request",
+                 "ReplyTo": form.email.data,
+                 "TextPart": "%s (%s) is requesting access to ES3." % (form.nickname.data, form.email.data,)
+                 }]
         }
         mail.send.create(data=data)
 
@@ -999,17 +1016,17 @@ def reset():
         html = render_template(
             'recover.html',
             recover_url=recover_url)
-        #msg = Message(subject, sender=config.MAIL_USERNAME, recipients=[user.id])
-        #msg.body = html
-        #mail.send(msg)
+        # msg = Message(subject, sender=config.MAIL_USERNAME, recipients=[user.id])
+        # msg.body = html
+        # mail.send(msg)
 
         data = {
             'Messages': [
-            {"From": {"Email": config.MAIL_USERNAME, "Name": config.MAIL_SENDER_NAME},
-            "To": [{"Email": user.id}],
-            "Subject": "Password reset requested",
-            "HTMLPart": html
-            }]
+                {"From": {"Email": config.MAIL_USERNAME, "Name": config.MAIL_SENDER_NAME},
+                 "To": [{"Email": user.id}],
+                 "Subject": "Password reset requested",
+                 "HTMLPart": html
+                 }]
         }
         mail.send.create(data=data)
         flash('Password reset email sent to ' + user.id)

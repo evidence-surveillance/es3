@@ -401,7 +401,9 @@ def docsim(review_id, sess_id=None):
             socketio.emit('docsim_update', {'msg': 'Unable to make predictions. Basicbot complete'}, room=sess_id)
         return
     tf_transformer = TfidfVectorizer(use_idf=False)
-    trials_vectorizer = pickle.load(open(utils.most_recent_tfidf_vec()))
+    most_recent = utils.most_recent_tfidf_vec()
+    most_recent_opened = open(most_recent, 'rb')
+    trials_vectorizer = pickle.load(most_recent_opened)
     normalised_tf_vector = tf_transformer.fit_transform([document])
     if sess_id:
         socketio.emit('docsim_update', {'msg': 'vectorising stuff...'}, room=sess_id)

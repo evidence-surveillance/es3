@@ -160,16 +160,16 @@ def retry_get(base_url, params):
         r = requests_retry_session().get(base_url, params=params)
         r.raise_for_status()
     except requests.exceptions.HTTPError as errh:
-        print ("Http Error:", errh)
+        print("Http Error:", errh)
         return None
     except requests.exceptions.ConnectionError as errc:
-        print ("Error Connecting:", errc)
+        print("Error Connecting:", errc)
         return None
     except requests.exceptions.Timeout as errt:
-        print ("Timeout Error:", errt)
+        print("Timeout Error:", errt)
         return None
     except requests.exceptions.RequestException as err:
-        print ("OOps: Something Else", err)
+        print("OOps: Something Else", err)
         return None
     return r
 

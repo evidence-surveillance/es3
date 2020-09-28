@@ -4,14 +4,14 @@ $(document).ready(function () {
     let abstractRelatedReviews = '';
 
     function setPubDate() {
-        var pub_year = ($("#pub_date").html());
+        var pub_year = ($('#pub_date').html());
         pub_date = new Date(pub_year, 1, 1);
         var days = (Math.round((new Date() - pub_date) / (1000 * 60 * 60 * 24))).toFixed(0);
         if (days >= 365) {
             var years = (days / 365).toFixed(2);
-            $("#time_since_pub").html(years + ' years');
+            $('#time_since_pub').html(years + ' years');
         } else {
-            $("#time_since_pub").html(days + ' days');
+            $('#time_since_pub').html(days + ' days');
         }
     }
 
@@ -38,7 +38,7 @@ $(document).ready(function () {
     }
 
     function numberWithCommas(x) {
-        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
     function gen_plot(msg) {
@@ -52,13 +52,13 @@ $(document).ready(function () {
         var source = new Bokeh.ColumnDataSource({
             data: {
                 x: xx,
-                y: yy,
+                y: yy
             }
         });
         var image = new Bokeh.ImageURL({
             url: data['img'],
             x: xdr.start - 2.0, y: ydr.end, w: ydr.end - ydr.start - 2.7,
-            h: (xdr.end - xdr.start) + 6.7, anchor: "top_left"
+            h: (xdr.end - xdr.start) + 6.7, anchor: 'top_left'
         });
         var p = plt.figure({
             plot_width: 550,
@@ -67,7 +67,7 @@ $(document).ready(function () {
             y_range: ydr
         });
         p.add_glyph(image);
-        var circles = p.circle({field: "x"}, {field: "y"}, {
+        var circles = p.circle({field: 'x'}, {field: 'y'}, {
             source: source,
             radius: 0.2,
             fill_color: colours,
@@ -80,7 +80,7 @@ $(document).ready(function () {
         p.ygrid[0].visible = false;
         p.border_fill_color = null;
         p.outline_line_color = null;
-        return p
+        return p;
     }
 
     // function refresh_dashboard() {
@@ -107,31 +107,49 @@ $(document).ready(function () {
     //         num_p += parseInt((incl_part / 66).toFixed());
     //     }, 30);
     // }
+
+
+    // im putting all code for /trial path in this section because this file (and the rest of the app) is the definition
+    // of spaghetti and i dont want to get lost
+    if (window.location.pathname === '/trial' && window.location.href.indexOf('trialid') > -1) {
+        console.log('on trial page');
+        socket.on('my_response', msg => {
+            console.log('websocket connected, requesting data');
+            socket.emit('get_trial', {trial_id: getUrlParameter('trialid')});
+            $('.progress_div').slideDown(1000);
+        });
+        socket.on('trial_data', msg => {
+            $('#temp_json').text(JSON.stringify(msg.trial, null, 2));
+            $('.progress_div').slideUp(1000);
+        });
+    }
+
+
     socket.on('blank_update', function (msg) {
         console.log('server update:', msg['msg']);
-        $("#progress_txt").text(msg['msg']);
+        $('#progress_txt').text(msg['msg']);
         if (msg['msg'].indexOf('complete') > -1) {
-            $(".progress_div").slideUp(1000);
+            $('.progress_div').slideUp(1000);
         } else {
-            $(".progress_div").slideDown(1000);
+            $('.progress_div').slideDown(1000);
         }
     });
     socket.on('page_content', function (msg) {
         if (msg['section'] === 'review_data') {
-            $("#review-data-container").html(msg['data']);
-            $("#related-reviews").html(msg['related_reviews']);
-            $("#review-data-container").slideDown(1000);
-            $("#related-reviews").slideDown(1000);
+            $('#review-data-container').html(msg['data']);
+            $('#related-reviews').html(msg['related_reviews']);
+            $('#review-data-container').slideDown(1000);
+            $('#related-reviews').slideDown(1000);
             setPubDate();
         }
         if (msg['section'] === 'search_results') {
-            $(".pg_content").attr('style', 'display:none;');
-            $(".pg_content").html(msg['data']);
-            $(".pg_content").slideDown(1000);
-            $(".progress_div").slideUp(1000);
+            $('.pg_content').attr('style', 'display:none;');
+            $('.pg_content').html(msg['data']);
+            $('.pg_content').slideDown(1000);
+            $('.progress_div').slideUp(1000);
         }
         if (msg['section'] === 'plot') {
-            var plot = $("#plot"); // The plot dom element
+            var plot = $('#plot'); // The plot dom element
             plot.removeClass('hidden'); // Show plot
             var data = msg['data']; // The plot data
 
@@ -168,7 +186,7 @@ $(document).ready(function () {
                 y: (y_max + max_radii) * 8.6 / 10,
                 text: 'Systematic Review Published',
                 text_align: 'center',
-                background_fill_color: 'white',
+                background_fill_color: 'white'
             });
             var pubdate = new Bokeh.Span({
                 location: pub_date,
@@ -189,20 +207,20 @@ $(document).ready(function () {
                     enrollment: data['real_enrollment']
                 }
             });
-            var tools = "pan,crosshair,wheel_zoom,box_zoom,reset,save";
+            var tools = 'pan,crosshair,wheel_zoom,box_zoom,reset,save';
             var p = plt.figure({
                 tools: tools,
                 sizing_mode: 'stretch_both',
                 y_range: ydr,
                 x_range: xdr,
                 x_axis_label: 'trial completion date',
-                x_axis_type: 'datetime',
+                x_axis_type: 'datetime'
             });
             p.yaxis[0].visible = false;
             p.xgrid[0].visible = false;
             p.ygrid[0].visible = false;
             var renderers = [];
-            var circles = p.circle({field: "x"}, {field: "y"}, {
+            var circles = p.circle({field: 'x'}, {field: 'y'}, {
                 source: source,
                 radius: radii,
                 radius_dimension: 'y',
@@ -227,12 +245,12 @@ $(document).ready(function () {
                     line_width: 1,
                     line_color: 'black',
                     line_alpha: 0.3
-                })
+                });
             }
             var tooltip =
-                ("<div>Completion date: @dates</div>" +
-                    "<div>ID: @title</div>" +
-                    "<div>Participants: @enrollment</div>"
+                ('<div>Completion date: @dates</div>' +
+                    '<div>ID: @title</div>' +
+                    '<div>Participants: @enrollment</div>'
                 );
             var hover = new Bokeh.HoverTool({
                 tooltips: tooltip,
@@ -258,7 +276,7 @@ $(document).ready(function () {
             }
 
             if (window.location.pathname !== '/blank') {
-                $(".progress_div").slideUp(1000);
+                $('.progress_div').slideUp(1000);
             }
 
             if (!$.trim(plot.html())) {
@@ -276,17 +294,17 @@ $(document).ready(function () {
         }
         if (msg['section'] === 'recommended_trials') {
 
-            var rel_container = $("#rel_trials_container");
+            var rel_container = $('#rel_trials_container');
             if (rel_container.is(':empty')) {
                 rel_container.html(msg['data']);
                 rel_container.slideDown(2000);
-                $("#incl_trials_container").slideDown(2000);
+                $('#incl_trials_container').slideDown(2000);
             } else {
                 var node = $.parseHTML(msg['data']);
                 var replacement = $(node).filter('#accordion-rel');
-                $("#accordion-rel").html(replacement.html());
+                $('#accordion-rel').html(replacement.html());
             }
-            var size_li = $("#accordion-rel").children("div.panel-default").length;
+            var size_li = $('#accordion-rel').children('div.panel-default').length;
             var x = 10;
             $('#accordion-rel div.panel-default').hide();
             $('#accordion-rel div.panel-default:lt(' + x + ')').show();
@@ -301,8 +319,8 @@ $(document).ready(function () {
 
         }
         if (msg['section'] === 'related_reviews') {
-            $("#related-reviews").html(msg['data']);
-            $("#related-reviews").slideDown(1000);
+            $('#related-reviews').html(msg['data']);
+            $('#related-reviews').slideDown(1000);
             if (window.location.pathname === '/blank') {
                 $('#related-reviews').css('display', 'block');
                 $('#related-sort').removeClass('hidden');
@@ -310,21 +328,21 @@ $(document).ready(function () {
             }
         }
         if (msg['section'] === 'related_reviews_update') {
-            $("#related_review_items").html(msg['data']);
+            $('#related_review_items').html(msg['data']);
 
         }
         if (msg['section'] === 'rel_trials') {
-            var rel_container = $("#rel_trials_container");
+            var rel_container = $('#rel_trials_container');
             if (rel_container.is(':empty')) {
                 rel_container.html(msg['data']);
                 rel_container.slideDown(2000);
             } else {
                 var node = $.parseHTML(msg['data']);
                 var replacement = $(node).filter('#accordion-rel');
-                $("#accordion-rel").replaceWith(replacement);
-                $("#accordion-rel").slideDown(2000);
+                $('#accordion-rel').replaceWith(replacement);
+                $('#accordion-rel').slideDown(2000);
             }
-            var size_li = $("#accordion-rel").children("div.panel-default").length;
+            var size_li = $('#accordion-rel').children('div.panel-default').length;
             var x = 10;
             $('#accordion-rel div.panel-default').hide();
             $('#accordion-rel div.panel-default:lt(' + x + ')').show();
@@ -336,29 +354,29 @@ $(document).ready(function () {
                     $('#load_more_rel').hide();
                 }
             });
-            $(".upvote").each(function () {
+            $('.upvote').each(function () {
                 $(this).upvote({
                     callback: upvote_callback
                 });
             });
             $('.rel').removeClass('active');
-            $("#" + msg['sort'] + '.rel').addClass('active');
+            $('#' + msg['sort'] + '.rel').addClass('active');
         }
         if (msg['section'] === 'incl_trials') {
             var node = $.parseHTML(msg['data']);
             var replacement = $(node).filter('#accordion-incl');
 
 
-            var incl_container = $("#incl_trials_container");
-            if (incl_container.is(':empty') || $("#accordion-incl").length === 0 || replacement.length === 0) {
+            var incl_container = $('#incl_trials_container');
+            if (incl_container.is(':empty') || $('#accordion-incl').length === 0 || replacement.length === 0) {
                 incl_container.html(msg['data']);
                 incl_container.slideDown(3000);
             } else {
                 if (window.location.pathname === '/blank') {
                     $('#incl_trials_container').html(msg['data']);
-                } else $("#accordion-incl").replaceWith(replacement);
+                } else $('#accordion-incl').replaceWith(replacement);
             }
-            var size_li = $("#accordion-incl").children("div.panel-default").length;
+            var size_li = $('#accordion-incl').children('div.panel-default').length;
             var x = 20;
             if (size_li <= x) {
                 $('#load_more_incl').hide();
@@ -373,7 +391,7 @@ $(document).ready(function () {
                 }
             });
             $('.incl').removeClass('active');
-            $("#" + msg['sort'] + '.incl').addClass('active');
+            $('#' + msg['sort'] + '.incl').addClass('active');
 
 
             if (window.location.pathname === '/blank') {
@@ -392,13 +410,13 @@ $(document).ready(function () {
             }
         }
         if (msg['section'] === 'no_results') {
-            $("#review-data-container").html(msg['data']);
-            $("#review-data-container").slideDown(1000);
-            $("#review-trials-container").empty();
-            $(".progress_div").slideUp(1000);
+            $('#review-data-container').html(msg['data']);
+            $('#review-data-container').slideDown(1000);
+            $('#review-trials-container').empty();
+            $('.progress_div').slideUp(1000);
         }
     });
-    if (document.URL.indexOf("browse") > -1) {
+    if (document.URL.indexOf('browse') > -1) {
         const browseVerified = window.localStorage.getItem('browseVerified') === 'true';
 
         $('#verified-only').on('change', e => {
@@ -414,14 +432,14 @@ $(document).ready(function () {
                     $('.list-group-item .badge').text('0').parent().addClass('hidden');
                     data = JSON.parse(data)['data'];
                     for (var i = 0; i < data.length; i++) {
-                        $("#" + data[i]['code']).text(data[i]['count']).parent().removeClass('hidden');
+                        $('#' + data[i]['code']).text(data[i]['count']).parent().removeClass('hidden');
                     }
 
                 }
             });
         }).prop('checked', browseVerified).trigger('change');
 
-    } else if (document.URL.indexOf("category") > -1) {
+    } else if (document.URL.indexOf('category') > -1) {
         var addr = document.URL.split('/');
         const browseVerified = window.localStorage.getItem('browseVerified') === 'true';
 
@@ -433,14 +451,14 @@ $(document).ready(function () {
                 type: 'POST',
                 contentType: 'application/json;charset=UTF-8',
                 data: JSON.stringify({
-                    "category": addr[addr.length - 1],
+                    'category': addr[addr.length - 1],
                     onlyVerified: state ? 1 : 0
                 }),
                 success: function (data) {
                     $('.list-group-item .badge').text('0').parent().addClass('hidden');
                     data = JSON.parse(data)['data'];
                     for (var i = 0; i < data.length; i++) {
-                        $("#condition_" + data[i]['id']).text(data[i]['count']).parent().removeClass('hidden');
+                        $('#condition_' + data[i]['id']).text(data[i]['count']).parent().removeClass('hidden');
                     }
                 }
             });
@@ -457,11 +475,11 @@ $(document).ready(function () {
         }).prop('checked', browseVerified).trigger('change');
     }
     socket.on('my_response', function (msg) {
-        if (document.URL.indexOf("search") >= 0) {
+        if (document.URL.indexOf('search') >= 0) {
             $(document).ready(function () {
 
                 socket.emit('search', {'review_id': getUrlParameter('searchterm')});
-                $(".progress_div").slideDown(1000);
+                $('.progress_div').slideDown(1000);
             });
         }
         var url = window.location.href;
@@ -482,17 +500,17 @@ $(document).ready(function () {
                     error: err => {
                         console.log(err);
                     }
-                })
-            })
+                });
+            });
         }
         if (window.location.pathname === '/') {
             $.ajax({
-                url: "/data_summary",
+                url: '/data_summary',
                 type: 'GET',
                 contentType: 'application/json;charset=UTF-8',
                 success: function (data) {
                     data = JSON.parse(data)['data'];
-                    $("#link_counts").html(
+                    $('#link_counts').html(
                         `<div><a href="/browse">
                             ${numberWithCommas(data['reviews'])}
                             <small style="color: #337ab7 !important;"> systematic reviews</small>
@@ -513,7 +531,7 @@ $(document).ready(function () {
                         </div>
                         `
                     );
-                    $("#link_counts").fadeIn(1000);
+                    $('#link_counts').fadeIn(1000);
                 }
             });
 
@@ -525,7 +543,7 @@ $(document).ready(function () {
                 $(document).on('change', '#related-sort input', e => {
                     const idx = $(e.target).attr('id');
                     if (idx === 'rel-sort-abstract') {
-                        $("#related_review_items").html(abstractRelatedReviews);
+                        $('#related_review_items').html(abstractRelatedReviews);
                     } else {
 
                         socket.emit('refresh_related', {
@@ -567,7 +585,7 @@ $(document).ready(function () {
                                 method: 'post',
                                 contentType: 'application/json;charset=UTF-8',
                                 data: JSON.stringify({review_id: getUrlParameter('id'), title})
-                            })
+                            });
                         }
                     }, 3000, true)).on('keyup', e => {
                         const title = $(e.target).val();
@@ -594,52 +612,52 @@ $(document).ready(function () {
 
     socket.on('search_update', function (msg) {
 
-        $("#progress_txt").text(msg['msg']);
+        $('#progress_txt').text(msg['msg']);
         if (msg['msg'] === 'complete') {
-            $(".progress-div").attr('style', 'display:none;');
+            $('.progress-div').attr('style', 'display:none;');
         }
     });
     socket.on('search_res', function (msg) {
-        $("#progress_txt").text(msg['msg']);
+        $('#progress_txt').text(msg['msg']);
 
     });
 
     socket.on('docsim_update', function (msg) {
-        if (!$(".progress_basicbot").is(":visible")) {
-            $(".progress_basicbot").slideDown(1000);
+        if (!$('.progress_basicbot').is(':visible')) {
+            $('.progress_basicbot').slideDown(1000);
         }
-        $("#progress_txt_basicbot").text(msg['msg']);
+        $('#progress_txt_basicbot').text(msg['msg']);
         if (msg['msg'].indexOf('complete') > -1) {
             socket.emit('refresh_trials', {
                 'review_id': getUrlParameter('searchterm'),
                 'type': 'rel',
                 'plot': true
             });
-            $(".progress_basicbot").delay(1000).slideUp(2000);
+            $('.progress_basicbot').delay(1000).slideUp(2000);
         }
 
     });
     socket.on('crossrefbot_update', function (msg) {
-        if (!$(".progress_crossrefbot").is(":visible")) {
-            $(".progress_crossrefbot").slideDown(1000);
+        if (!$('.progress_crossrefbot').is(':visible')) {
+            $('.progress_crossrefbot').slideDown(1000);
         }
-        $("#progress_txt_crossrefbot").text(msg['msg']);
+        $('#progress_txt_crossrefbot').text(msg['msg']);
         if (msg['msg'].indexOf('complete') > -1) {
             socket.emit('refresh_trials', {
                 'review_id': getUrlParameter('searchterm'),
                 'type': 'incl',
                 'plot': true
             });
-            $(".progress_crossrefbot").delay(1000).slideUp(2000);
+            $('.progress_crossrefbot').delay(1000).slideUp(2000);
         }
 
     });
     socket.on('cochranebot_update', function (msg) {
 
-        if (!$(".progress_cochranebot").is(":visible")) {
-            $(".progress_cochranebot").slideDown(1000);
+        if (!$('.progress_cochranebot').is(':visible')) {
+            $('.progress_cochranebot').slideDown(1000);
         }
-        $("#progress_txt_cochranebot").text(msg['msg']);
+        $('#progress_txt_cochranebot').text(msg['msg']);
         if (msg['msg'].indexOf('complete') > -1) {
             socket.emit('refresh_trials', {
                 'review_id': getUrlParameter('searchterm'),
@@ -653,22 +671,22 @@ $(document).ready(function () {
                     'plot': true
                 });
             }
-            $(".progress_cochranebot").delay(1000).slideUp(2000);
+            $('.progress_cochranebot').delay(1000).slideUp(2000);
         }
 
     });
     socket.on('basicbot2_update', function (msg) {
-        if (!$(".progress_basicbot2").is(":visible")) {
-            $(".progress_basicbot2").slideDown(1000);
+        if (!$('.progress_basicbot2').is(':visible')) {
+            $('.progress_basicbot2').slideDown(1000);
         }
-        $("#progress_txt_basicbot2").text(msg['msg']);
+        $('#progress_txt_basicbot2').text(msg['msg']);
         if (msg['msg'].indexOf('complete') > -1) {
             socket.emit('refresh_trials', {
                 'review_id': getUrlParameter('searchterm'),
                 'type': 'rel',
                 'plot': true
             });
-            $(".progress_basicbot2").delay(1000).slideUp(2000);
+            $('.progress_basicbot2').delay(1000).slideUp(2000);
         }
 
     });
@@ -703,18 +721,18 @@ $(document).ready(function () {
                 review: getUrlParameter('searchterm')
             }),
             error: function (data2) {
-                var modal = $("#myModal");
+                var modal = $('#myModal');
                 modal.find('.modal-body p').text(data2['responseText']);
                 modal.modal();
                 if (data.upvoted) {
-                    $("#" + data.id + '_vote > a.upvote').removeClass('upvote-on');
+                    $('#' + data.id + '_vote > a.upvote').removeClass('upvote-on');
                 } else {
-                    $("#" + data.id + '_vote > a.downvote').removeClass('downvote-on');
+                    $('#' + data.id + '_vote > a.downvote').removeClass('downvote-on');
                 }
             },
             success: function (data1) {
                 var result = JSON.parse(data1);
-                $("#panel_" + data.id + " a.nicknames").html(result['voters']);
+                $('#panel_' + data.id + ' a.nicknames').html(result['voters']);
             }
         });
     };
@@ -727,7 +745,7 @@ $(document).ready(function () {
         var panel = $('#panel_' + nct_id);
         var category = 'incl';
         relevant_included(nct_id, function (data) {
-            panel.fadeOut("slow", function () {
+            panel.fadeOut('slow', function () {
                 panel.remove();
                 var result = JSON.parse(data);
 
@@ -741,17 +759,17 @@ $(document).ready(function () {
                 });
                 $('#alert-place-' + category).show();
                 $('#alert-place-' + category).html('<div class="alert alert-success "> <strong>Thank you! </strong>' + result['message'] + '</div>');
-                $('#alert-place-' + category).delay(3000).fadeOut("slow");
+                $('#alert-place-' + category).delay(3000).fadeOut('slow');
             });
             enable_elements();
         });
     }
 
-    $(document).on("click", ".rel_incl", function (e) {
+    $(document).on('click', '.rel_incl', function (e) {
         var nct_id = e.target.id.substring(0, 11);
         move_rel_incl(nct_id);
     });
-    $(document).on("click", ".rec_rel_incl", function (e) {
+    $(document).on('click', '.rec_rel_incl', function (e) {
         var nct_id = e.target.id.substring(0, 11);
         var $panel = $('#panel_' + nct_id);
         var category = 'incl';
@@ -759,7 +777,7 @@ $(document).ready(function () {
         submitTrial(nct_id, 'included', true, data => {
 
 
-            $panel.fadeOut("slow", function () {
+            $panel.fadeOut('slow', function () {
 
                 socket.emit('refresh_trials', {
                     'ftext': true,
@@ -775,7 +793,7 @@ $(document).ready(function () {
 
 
     });
-    $(document).on("click", ".save_review", function (e) {
+    $(document).on('click', '.save_review', function (e) {
         var val = true;
         var review_id = this.id;
         if (typeof ($(this).attr('active')) === 'undefined') {
@@ -783,7 +801,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: "/save_review",
+            url: '/save_review',
             type: 'post',
             contentType: 'application/json;charset=UTF-8',
             data: JSON.stringify({
@@ -791,7 +809,7 @@ $(document).ready(function () {
                 value: val
             }),
             error: function (data2) {
-                var modal = $("#myModal");
+                var modal = $('#myModal');
                 modal.find('.modal-body p').text(data2['responseText']);
                 modal.modal();
             }
@@ -803,7 +821,7 @@ $(document).ready(function () {
         var category = 'incl';
         var panel = $('#panel_' + nct_id);
         included_relevant(nct_id, function (data) {
-            if ($("#accordion-incl > .panel").length === 1) {
+            if ($('#accordion-incl > .panel').length === 1) {
 
                 socket.emit('refresh_trials', {
                     'review_id': getUrlParameter('searchterm'),
@@ -812,7 +830,7 @@ $(document).ready(function () {
                     'plot': false
                 });
             } else {
-                panel.fadeOut("slow", function () {
+                panel.fadeOut('slow', function () {
                     panel.remove();
 
                 });
@@ -826,7 +844,7 @@ $(document).ready(function () {
             });
             $('#alert-place-' + category).show();
             $('#alert-place-' + category).html('<div class="alert alert-success "> <strong>Thank you! </strong>' + result['message'] + '</div>');
-            $('#alert-place-' + category).delay(3000).fadeOut("slow", function () {
+            $('#alert-place-' + category).delay(3000).fadeOut('slow', function () {
                 enable_elements();
             });
         });
@@ -835,29 +853,29 @@ $(document).ready(function () {
     function calc_completeness() {
         var rel_trials = 0;
         var rel_participants = 0;
-        $(".rel-check:checked").each(function () {
+        $('.rel-check:checked').each(function () {
             rel_trials += 1;
             if (parseInt($(this).attr('value'))) {
                 rel_participants += parseInt($(this).attr('value'));
             }
         });
-        $("#num_rel_trials").text(rel_trials);
-        $("#part_rel_trials").text(rel_participants);
+        $('#num_rel_trials').text(rel_trials);
+        $('#part_rel_trials').text(rel_participants);
     }
 
-    $(document).on("click", '#reset_cmp', function (e) {
-        $(".rel-check:checked").each(function () {
+    $(document).on('click', '#reset_cmp', function (e) {
+        $('.rel-check:checked').each(function () {
             $(this).prop('checked', false);
         });
         calc_completeness();
     });
-    $(document).on("click", '.sort .btn', function (e) {
+    $(document).on('click', '.sort .btn', function (e) {
         var order = $(this).attr('id');
         var side = '';
         if ($(this).hasClass('incl')) {
-            side = 'incl'
+            side = 'incl';
         } else {
-            side = 'rel'
+            side = 'rel';
         }
         socket.emit('refresh_trials', {
             'review_id': getUrlParameter('searchterm'),
@@ -866,20 +884,20 @@ $(document).ready(function () {
             'plot': false
         });
     });
-    $(document).on("click", "#cmp_btn", function (e) {
-        $("#completeness_val").css('visibility', 'visible');
-        $("#cmp_btn").css('visibility', 'hidden');
-        $("#reset").css('visibility', 'visible');
-        $(".form-check-input").css('visibility', 'visible');
-        calc_completeness()
+    $(document).on('click', '#cmp_btn', function (e) {
+        $('#completeness_val').css('visibility', 'visible');
+        $('#cmp_btn').css('visibility', 'hidden');
+        $('#reset').css('visibility', 'visible');
+        $('.form-check-input').css('visibility', 'visible');
+        calc_completeness();
     });
-    $(document).on("click", ".btn-incl-cmp", function (e) {
+    $(document).on('click', '.btn-incl-cmp', function (e) {
         var complete = e.target.value;
         update_included_complete(complete, function (data) {
-            $(".btn-incl-cmp").fadeOut(1000);
+            $('.btn-incl-cmp').fadeOut(1000);
             var result = JSON.parse(data);
             $('#alert-place-incl').html('<div class="alert alert-success">  <strong>' + result['message'] + '</strong></div>');
-            $('#alert-place-incl').delay(3000).fadeOut("slow");
+            $('#alert-place-incl').delay(3000).fadeOut('slow');
             $('#accordion-incl').slideUp(2000);
             socket.emit('refresh_trials', {
                 'review_id': getUrlParameter('searchterm'),
@@ -891,39 +909,39 @@ $(document).ready(function () {
                     'review_id': getUrlParameter('searchterm')
                 });
                 $('.rel_incl').css('visibility', 'hidden');
-                $(".btn-incl-cmp").val('False');
-                $(".btn-incl-cmp").html('This list is incomplete');
+                $('.btn-incl-cmp').val('False');
+                $('.btn-incl-cmp').html('This list is incomplete');
             } else {
                 $('.rel_incl').css('visibility', 'visible');
-                $(".btn-incl-cmp").val('True');
-                $(".btn-incl-cmp").html('This list is complete');
+                $('.btn-incl-cmp').val('True');
+                $('.btn-incl-cmp').html('This list is complete');
             }
-            $(".btn-incl-cmp").fadeIn(1000);
+            $('.btn-incl-cmp').fadeIn(1000);
         });
     });
-    $(document).on("change", ".form-check-input:checkbox", function (e) {
+    $(document).on('change', '.form-check-input:checkbox', function (e) {
         calc_completeness();
     });
 
     function disable_elements() {
-        $(".nct-submit").attr('disabled', true);
-        $(".upvote").attr('disabled', true);
-        $(".downvote").attr('disabled', true);
-        $(".dismiss").attr('disabled', true);
-        $(".btn-incl-cmp").attr('disabled', true);
-        $(".rel_incl").attr('disabled', true);
+        $('.nct-submit').attr('disabled', true);
+        $('.upvote').attr('disabled', true);
+        $('.downvote').attr('disabled', true);
+        $('.dismiss').attr('disabled', true);
+        $('.btn-incl-cmp').attr('disabled', true);
+        $('.rel_incl').attr('disabled', true);
     }
 
     function enable_elements() {
-        $(".nct-submit").attr('disabled', false);
-        $(".upvote").attr('disabled', false);
-        $(".downvote").attr('disabled', false);
-        $(".dismiss").attr('disabled', false);
-        $(".btn-incl-cmp").attr('disabled', false);
-        $(".rel_incl").attr('disabled', false);
+        $('.nct-submit').attr('disabled', false);
+        $('.upvote').attr('disabled', false);
+        $('.downvote').attr('disabled', false);
+        $('.dismiss').attr('disabled', false);
+        $('.btn-incl-cmp').attr('disabled', false);
+        $('.rel_incl').attr('disabled', false);
     }
 
-    $(document).on("click", ".nct-submit", function (e) {
+    $(document).on('click', '.nct-submit', function (e) {
         var re_nct = new RegExp('^(NCT|nct)[0-9]{8}$');
         var category = e.target.name;
         var nct_id = $('#' + category + '-id').val().trim();
@@ -938,7 +956,7 @@ $(document).ready(function () {
                     accordion.fadeOut('slow');
                     $('#alert-place-' + category).html('<div class="alert alert-success">  <strong>Thank you! </strong>' + result['message'] + '</div>');
                     $('#alert-place-' + category).show();
-                    $('#alert-place-' + category).delay(3000).fadeOut("slow", function () {
+                    $('#alert-place-' + category).delay(3000).fadeOut('slow', function () {
                         enable_elements();
                     });
                     $('#accordion-' + category).prepend('');
@@ -957,13 +975,13 @@ $(document).ready(function () {
                         });
                     }
                 } else {
-                    var to_move = $("#panel_" + nct_id);
+                    var to_move = $('#panel_' + nct_id);
                     to_move.parent().prepend(to_move);
-                    if (to_move.is(":hidden")) {
+                    if (to_move.is(':hidden')) {
                         to_move.show();
                     }
-                    to_move[0].scrollIntoView({behaviour: "smooth"});
-                    $("#panel_" + nct_id + "> .panel-heading").effect("highlight", {}, 3000);
+                    to_move[0].scrollIntoView({behaviour: 'smooth'});
+                    $('#panel_' + nct_id + '> .panel-heading').effect('highlight', {}, 3000);
                     if (result['move']) {
                         $('#alert-place-' + category).html('<div class="alert alert-info "> <strong>Uh oh! </strong>' + result['message'] + '   <a class="btn btn-xs btn-primary pull-right move-trial">Move to this list</a></div>');
                     } else {
@@ -973,7 +991,7 @@ $(document).ready(function () {
                     $('#alert-place-' + category).delay(3000).fadeOut(1000, function () {
                         enable_elements();
                     });
-                    $(document).on("click", ".move-trial", function (e) {
+                    $(document).on('click', '.move-trial', function (e) {
                         if (category === 'incl') {
                             $('#alert-place-' + category).html('');
                             move_rel_incl(nct_id);
@@ -987,13 +1005,13 @@ $(document).ready(function () {
         } else {
             $('#alert-place-' + category).html('<div class="alert alert-warning "><strong>Uh oh! </strong>Please enter a valid ClinicalTrials.gov registry ID</div>');
             $('#alert-place-' + category).fadeIn(400, function () {
-                $('#alert-place-' + category).delay(2000).fadeOut("slow", function () {
+                $('#alert-place-' + category).delay(2000).fadeOut('slow', function () {
                     enable_elements();
                 });
             });
         }
     });
-    $(document).on("click", ".row .dismiss", function (e) {
+    $(document).on('click', '.row .dismiss', function (e) {
         var nct_id = e.target.id.substring(8);
 
         if (window.location.pathname === '/blank') {
@@ -1010,9 +1028,9 @@ $(document).ready(function () {
                 });
             }
 
-            return
+            return;
         }
-        move_incl_rel(nct_id)
+        move_incl_rel(nct_id);
     });
 
     $('#recommender-new').on('click', e => {
@@ -1022,12 +1040,12 @@ $(document).ready(function () {
             url: '/createftext',
             method: 'post',
             success: data => {
-                console.log(data)
+                console.log(data);
                 window.location.href =
                     `/blank?id=${JSON.parse(data)['idx']}`
                 ;
             }
-        })
+        });
     });
 
     $('#recommender-titlebar').on('click', e => {
@@ -1040,12 +1058,12 @@ $(document).ready(function () {
                     `/blank?id=${JSON.parse(data)['idx']}`
                 ;
             }
-        })
+        });
     });
 
     function update_included_complete(complete, callback) {
         $.ajax({
-            url: "/included_complete",
+            url: '/included_complete',
             type: 'post',
             contentType: 'application/json;charset=UTF-8',
             data: JSON.stringify({
@@ -1053,7 +1071,7 @@ $(document).ready(function () {
                 value: complete
             }),
             error: function (data2) {
-                var modal = $("#myModal");
+                var modal = $('#myModal');
                 modal.find('.modal-body p').text(data2['responseText']);
                 modal.modal();
             },
@@ -1065,7 +1083,7 @@ $(document).ready(function () {
 
     function included_relevant(nct_id, callback) {
         $.ajax({
-            url: "/included_relevant",
+            url: '/included_relevant',
             type: 'post',
             contentType: 'application/json;charset=UTF-8',
             data: JSON.stringify({
@@ -1076,7 +1094,7 @@ $(document).ready(function () {
                 callback(data);
             },
             error: function (data2) {
-                var modal = $("#myModal");
+                var modal = $('#myModal');
                 modal.find('.modal-body p').text(data2['responseText']);
                 modal.modal();
             }
@@ -1085,7 +1103,7 @@ $(document).ready(function () {
 
     function relevant_included(nct_id, callback) {
         $.ajax({
-            url: "/relevant_included",
+            url: '/relevant_included',
             type: 'post',
             contentType: 'application/json;charset=UTF-8',
             data: JSON.stringify({
@@ -1096,7 +1114,7 @@ $(document).ready(function () {
                 callback(data);
             },
             error: function (data2) {
-                var modal = $("#myModal");
+                var modal = $('#myModal');
                 modal.find('.modal-body p').text(data2['responseText']);
                 modal.modal();
             }
@@ -1118,7 +1136,7 @@ $(document).ready(function () {
             error: function (data2) {
 
             }
-        })
+        });
     }
 
     function submitTrial(id, relationship, userCreated = false, callback) {
@@ -1145,7 +1163,7 @@ $(document).ready(function () {
                 enable_elements();
             },
             error: function (data2) {
-                var modal = $("#myModal");
+                var modal = $('#myModal');
                 modal.find('.modal-body p').text(data2['responseText']);
                 modal.modal();
                 enable_elements();
@@ -1155,7 +1173,7 @@ $(document).ready(function () {
 
     function getPlot(callback) {
         $.ajax({
-            url: "/plot",
+            url: '/plot',
             type: 'post',
             contentType: 'application/json;charset=UTF-8',
             success: function (data) {

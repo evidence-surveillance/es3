@@ -15,6 +15,43 @@ eutils_email = config.EUTILS_EMAIL
 eutils_tool = config.EUTILS_TOOL
 
 
+def get_trial_data(trial_id):
+    """ Get data to display on /trial page """
+    conn = dblib.create_con(VERBOSE=True)
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    if trial_id.startswith('NCT'):
+        cur.execute("""
+            SELECT te.nct_id, 
+               COALESCE(official_title, brief_title) AS title,
+               brief_summary,
+               enrollment AS participants,
+               array_agg(rr.review_id) AS review_links,
+               array_agg(rr.user_id) AS review_linking_user_id,
+               array_agg(rr.upvotes) AS review_link_upvotes,
+               array_agg(rr.downvotes) AS review_link_downvotes,
+               array_agg(rr.verified) AS review_link_verified,
+               array_agg(rr.relationship) AS review_link_relationship,
+               array_agg(rr.nickname) AS review_link_user_nickname
+            FROM tregistry_entries te
+            LEFT JOIN review_rtrial rr ON te.nct_id = rr.nct_id
+            WHERE te.nct_id = %s
+            GROUP BY te.nct_id;
+        """, (trial_id,))
+    else:
+        cur.execute("""
+            SELECT tp.trialpub_id, title, abstract, 
+            array_agg(rt.review_id) as review_links, 
+            array_agg(rt.user_id) as review_linking_user_id
+            FROM trial_publications tp
+            LEFT JOIN review_trialpubs rt on tp.trialpub_id = rt.trialpub_id
+            WHERE tp.trialpub_id = %s
+            GROUP BY tp.trialpub_id;
+        """, (trial_id,))
+    trial = cur.fetchone()
+    conn.close()
+    return trial
+
+
 def review_lock_status(review_id):
     """
     return status of review included trials (locked = T or F)
@@ -255,8 +292,10 @@ def link_ftext_trial(review_id, nct_id):
     except psycopg2.IntegrityError as e:
         print(e)
         conn.rollback()
-        if add_missing_trial(nct_id):
-            cur.execute(sql, (review_id, nct_id,))
+        # Returns redirected nct_id if the argument nct is actually an alias for another trial
+        true_nct_id = add_missing_trial(nct_id)
+        if true_nct_id:
+            cur.execute(sql, (review_id, true_nct_id,))
             conn.commit()
     conn.close()
 
@@ -291,8 +330,7 @@ def review_publication(review_id, publication_id, user_id):
             (review_id, publication_id, user_id))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print
-        e
+        print(e)
         conn.rollback()
         ec = Client(api_key=eutils_key)
         article = ec.efetch(db='pubmed', id=publication_id)
@@ -317,7 +355,7 @@ def review_trial(review_id, nct_id, verified, relationship, nickname, user_id, v
     """
     existing = check_existing_review_trial(review_id, nct_id)
     lock = review_lock_status(review_id)
-    if lock and relationship is 'included':
+    if lock and relationship == 'included':
         if existing:
             vote(existing[0], vote_type, user_id)
         return
@@ -325,7 +363,7 @@ def review_trial(review_id, nct_id, verified, relationship, nickname, user_id, v
         vote(existing[0], vote_type, user_id)
         if existing[1] == 'relevant' and relationship == 'included':
             change_relationship(existing[0], relationship)
-        elif existing[1] == 'included' and relationship == 'relevant' and user_id is 17:
+        elif existing[1] == 'included' and relationship == 'relevant' and user_id == 17:
             change_relationship(existing[0], relationship)
     else:
         link_review_trial(review_id, nct_id, verified, relationship, nickname, user_id)
@@ -354,22 +392,25 @@ def link_review_trial(review_id, nct_id, verified, relationship, nickname, user_
     except psycopg2.IntegrityError as e:
         print(e)
         conn.rollback()
-        if add_missing_trial(nct_id):
+        # Returns redirected nct_id if the argument nct is actually an alias for another trial
+        true_nct_id = add_missing_trial(nct_id)
+        if true_nct_id:
             cur.execute(
                 "INSERT INTO review_rtrial(review_id, nct_id, verified,  upvotes, downvotes, relationship, nickname, user_id) VALUES (%s, %s, %s, %s,"
                 " %s , %s, %s, %s) ON CONFLICT (review_id, nct_id) DO NOTHING;",
-                (review_id, nct_id, verified, 0, 0, relationship, nickname, user_id))
+                (review_id, true_nct_id, verified, 0, 0, relationship, nickname, user_id))
             conn.commit()
     conn.close()
 
 
 def add_missing_trial(nct_id):
-    """ retrieve and insert trial with speficied ID """
+    """ retrieve and insert trial with specified ID """
     xml = get_trial_xml(nct_id)
     if xml:
-        update_record(xml)
-        return True
+        print(nct_id, 'found on ct, adding')
+        return update_record(xml)
     else:
+        print(nct_id, 'not found on ct either, ignoring this link')
         return False
 
 
@@ -433,13 +474,15 @@ def publication_trial(publication_id, nct_id, user_id):
             (publication_id, nct_id, user_id))
         conn.commit()
     except psycopg2.IntegrityError as e:
-        print(e)
+        print(nct_id, 'not found in db, grabbing it from ct api')
         conn.rollback()
-        add_missing_trial(nct_id)
-        cur.execute(
-            "INSERT INTO trialpubs_rtrial (trialpub_id, nct_id, user_id) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING ;",
-            (publication_id, nct_id, user_id))
-        conn.commit()
+        # Returns redirected nct_id if the argument nct is actually an alias for another trial
+        true_nct_id = add_missing_trial(nct_id)
+        if true_nct_id:
+            cur.execute(
+                "INSERT INTO trialpubs_rtrial (trialpub_id, nct_id, user_id) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING ;",
+                (publication_id, true_nct_id, user_id))
+            conn.commit()
     conn.close()
 
 
@@ -670,13 +713,12 @@ def update_record(xml_file):
     """
     update trial in the database with data in XML specified file
     @param xml_file: path for xml file
+    @param force_nct_id: force an nct_id instead of the one in clinical_study.id_info.nct_id
+                         useful for when a linked nct_id is actually the nct_alias
     """
-    try:
-        obj = untangle.parse(xml_file)
-    except Exception as e:
-        print
-        e
-        return False
+
+    xml_file = xml_file if type(xml_file) is str else str(xml_file, 'utf-8')
+    obj = untangle.parse(xml_file)
     result = {'condition': []}
     result['completion_date'] = None
     result['nct_id'] = obj.clinical_study.id_info.nct_id.cdata.rstrip("\r\n")
@@ -717,7 +759,7 @@ def update_record(xml_file):
                 result['mesh_terms'].append(mesh_term.cdata.rstrip("\r\n"))
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor()
-    cur.execute("SELECT * FROM tregistry_entries WHERE nct_id = %s;", (obj.clinical_study.id_info.nct_id.cdata,))
+    cur.execute("SELECT * FROM tregistry_entries WHERE nct_id = %s;", (result['nct_id'],))
     nct_id = cur.fetchone()
     if nct_id:
         cur.execute(
@@ -767,6 +809,7 @@ def update_record(xml_file):
 
     conn.commit()
     conn.close()
+    return result['nct_id']
 
 
 def get_trialpubs(nct_id):
@@ -787,7 +830,7 @@ def pubmedarticle_to_db(article, table):
     """ save PubMedArticle object to the specified table """
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor()
-    if table is 'trial_publications':
+    if table == 'trial_publications':
         cur.execute(
             "INSERT INTO trial_publications(trialpub_id, title, source, authors, publish_date, abstract, doi)" \
             " VALUES (%s,%s,%s,%s,%s,%s,%s) on conflict(trialpub_id) do nothing;",
@@ -795,7 +838,7 @@ def pubmedarticle_to_db(article, table):
              article.abstract,
              article.doi))
         conn.commit()
-    elif table is 'systematic_reviews':
+    elif table == 'systematic_reviews':
         cur.execute(
             "INSERT INTO systematic_reviews(review_id, title, source, authors, publish_date, abstract, doi)" \
             " VALUES (%s,%s, %s,%s,%s,%s,%s) on conflict(review_id) do nothing;",
@@ -1007,7 +1050,8 @@ def get_trial_xml(nct_id):
     """ download & return the XML for the specified trial from ClincialTrials.gov  """
     base_url = 'https://clinicaltrials.gov/ct2/show/'
     r = utils.retry_get(base_url + nct_id, params={'displayxml': 'true'})
-    if r and r.status_code is 200:
+    print('%s%s?displayxml=true' % (base_url, nct_id))
+    if r and r.status_code == 200:
         return r.text.encode('utf-8')
     else:
         return None

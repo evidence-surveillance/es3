@@ -1,4 +1,5 @@
 from eventlet import monkey_patch
+
 monkey_patch()
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -14,6 +15,7 @@ from datetime import timedelta
 import config
 import psycopg2.extras
 from urllib.request import urlopen
+from urllib.error import HTTPError
 import zipfile
 import glob
 import bot
@@ -35,7 +37,6 @@ import eutils
 from subprocess import call
 import matfac as mf
 import requests
-
 
 eutils_key = config.EUTILS_KEY
 
@@ -101,7 +102,8 @@ def update_basicbot():
     reviews = cur.fetchall()
     conn.close()
     remove_bot_votes(3)
-    for review in reviews:
+    for i, review in enumerate(reviews):
+        print('%s/%s update_basicbot' % (i, len(reviews)))
         bot.docsim(review[0])
 
 
@@ -114,7 +116,8 @@ def update_basicbot2():
     reviews = cur.fetchall()
     conn.close()
     remove_bot_votes(10)
-    for review in reviews:
+    for i, review in enumerate(reviews):
+        print('%s/%s update_basicbot2' % (i, len(reviews)))
         bot.basicbot2(review[0])
 
 
@@ -285,23 +288,41 @@ def update_trial_publications(period):
     @param period: number of days back to start search
     @return: None
     """
+    # edge cases
+    # 32601120 NCT0282152 -- nct given with missing digit
+    # 31899823 NCT00020085 -- nct is an alias for NCT00004635
+
     ec = Client(api_key=eutils_key)
-    base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
-    r = utils.retry_get(base_url,
-                        params={'db': 'pubmed', 'term': 'clinicaltrials.gov[si]', 'format': 'json',
-                                'retmax': 10000,
-                                'email': crud.eutils_email,
-                                'tool': crud.eutils_tool, 'api_key': eutils_key, 'date_type': 'edat',
-                                'mindate': (datetime.now().date() - timedelta(days=period)).strftime(
-                                    '%Y/%m/%d'), 'maxdate': 3000})
-    print(r.url)
-    json = r.json()
-    pmids = json['esearchresult']['idlist']
+
+    pmids = []
+    page = 0
+    print('update_trial_publications, gathering pmids')
+    while True:
+        base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
+        r = utils.retry_get(base_url,
+                            params={'db': 'pubmed', 'term': 'clinicaltrials.gov[si]', 'format': 'json',
+                                    'retmax': 10000,
+                                    'retstart': page * 10000,
+                                    'email': crud.eutils_email,
+                                    'tool': crud.eutils_tool, 'api_key': eutils_key, 'date_type': 'edat',
+                                    'mindate': (datetime.now() - timedelta(days=period)).strftime(
+                                        '%Y/%m/%d'), 'maxdate': 3000})
+        if not r:
+            break
+        json = r.json()
+        current_pmids = json['esearchresult']['idlist']
+        if not current_pmids or len(current_pmids) == 0:
+            break
+        pmids = pmids + current_pmids
+        print('page %s, pmid count: %s' % (page, len(pmids)))
+        page += 1
+
     segments = utils.chunks(pmids, 100)
     for s in segments:
         while True:
             try:
                 articles = ec.efetch(db='pubmed', id=s)
+                # articles = ec.efetch(db='pubmed', id=[31335881])
                 break
             except (
                     eutils.EutilsNCBIError, eutils.EutilsRequestError,
@@ -310,39 +331,55 @@ def update_trial_publications(period):
                 print(e)
                 time.sleep(5)
         for a in articles:
-            if hasattr(a, 'nct_ids'):
-                print(a.nct_ids)
-                ids = a.nct_ids
+            xpath = 'MedlineCitation/Article/DataBankList/DataBank[DataBankName = "ClinicalTrials.gov"]/AccessionNumberList/AccessionNumber/text()'
+            nct_ids = a._xml_root.xpath(xpath)
+            print('nct_ids found for pmid %s = [%s]' % (a.pmid, ', '.join(nct_ids)))
+            if len(nct_ids) > 0:
                 crud.pubmedarticle_to_db(a, 'trial_publications')
-                for id in ids:
-                    crud.publication_trial(a.pmid, id, 9)
+                for nct_id in nct_ids:
+                    if len(nct_id) != 11:
+                        print('##WARNING!: ignoring %s (%s) - not the expected 11 chars long, possible missing digit' %
+                              (nct_id, a.pmid))
+                        continue
+                    crud.publication_trial(a.pmid, nct_id, 9)
 
 
 def update_tregistry_entries(period):
     """
-    Pull updated for any tregistry entries updated in the last period number of days
-    @param period:
+    Pull tregistry entries
     @return:
     """
-    base_url = 'https://clinicaltrials.gov/ct2/results/download_studies?lupd_s={}&lupd_e={}&down_fmt=xml'.format(
-        (datetime.now().date() - timedelta(days=period)).strftime(
-            '%m/%d/%Y'), datetime.now().date().strftime('%m/%d/%Y'))
-    print(base_url)
-    response = urlopen(base_url)
-    local_filename = "test_folder.zip"
-    CHUNK = 16 * 1024
-    with open(local_filename, 'wb') as f:
-        while True:
-            chunk = response.read(CHUNK)
-            if not chunk:
-                break
-            f.write(chunk)
-    with zipfile.ZipFile("test_folder.zip", "r") as zip_ref:
-        zip_ref.extractall("nct_xml/")
-    path = "nct_xml/NCT*.xml"
-    for fname in glob.glob(path):
-        crud.update_record(fname)
-        os.remove(fname)
+    print('update_tregistry_entries')
+    down_chunk = 1
+    while True:
+        template = 'https://clinicaltrials.gov/ct2/results/download_studies?lupd_s={}&lupd_e={}&down_fmt=xml&down_count=10000&down_chunk={}'
+        end = datetime.now()
+        start = end - timedelta(days=period)
+        base_url = template.format(start.strftime('%m/%d/%Y'), end.strftime('%m/%d/%Y'), down_chunk)
+        print(base_url)
+        try:
+            response = urlopen(base_url)
+        except HTTPError as e:
+            print('downloaded all available trials in timeframe', e)
+            break
+        local_filename = "test_folder.zip"
+        CHUNK = 16 * 1024
+        with open(local_filename, 'wb') as f:
+            while True:
+                chunk = response.read(CHUNK)
+                if not chunk:
+                    break
+                f.write(chunk)
+        with zipfile.ZipFile("test_folder.zip", "r") as zip_ref:
+            zip_ref.extractall("nct_xml/")
+        path = "nct_xml/NCT*.xml"
+        for i, fname in enumerate(glob.glob(path)):
+            if i % 100 == 0:
+                print('chunk %s, %sk/10k: %s' % (down_chunk, i / 1000, fname[8:19]))  # 8:19 trying to return just nctid
+            crud.update_record(fname)
+            os.remove(fname)
+
+        down_chunk += 1
 
 
 def update_bots(period=None):
@@ -424,7 +461,8 @@ def upload_models():
         print(cmd)
         call(cmd.split())
     for x in [tfidf_labels, tfidf_matrix]:
-        cmd = 'scp -i ' + config.SCP2_KEYFILE + ' ' + x + ' ' + config.SCP2_USER + '@' + config.SCP2_HOST + ':' + config.REMOTE_PATH2+'/models/tfidf/'+x.split('/')[-1]
+        cmd = 'scp -i ' + config.SCP2_KEYFILE + ' ' + x + ' ' + config.SCP2_USER + '@' + config.SCP2_HOST + ':' + config.REMOTE_PATH2 + '/models/tfidf/' + \
+              x.split('/')[-1]
         print(cmd)
         call(cmd.split())
 
