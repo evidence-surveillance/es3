@@ -133,21 +133,40 @@ def remove_bot_votes(bot_id):
 def populate_reviews(period):
     """ download all new reviews made available on pubmed in the last <period> # days & save to db if they have trials in
     CrossRef or Cochrane """
-    base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
-    r = utils.requests_retry_session().get(base_url,
-                                           params={'db': 'pubmed',
-                                                   'term': 'systematic review[ti] OR meta analysis[ti] OR cochrane database of systematic reviews[ta]',
-                                                   'format': 'json',
-                                                   'retmax': 300000,
-                                                   'email': crud.eutils_email,
-                                                   'tool': crud.eutils_tool, 'api_key': eutils_key, 'date_type': 'edat',
-                                                   'mindate': (datetime.now().date() - timedelta(days=period)).strftime(
-                                                       '%Y/%m/%d'), 'maxdate': '3000'})
-    json = r.json()
-    pmids = json['esearchresult']['idlist']
-    print(len(pmids))
-    segments = utils.chunks(pmids, 100)
+
     ec = Client(api_key=eutils_key)
+
+    pmids = []
+    page = 0
+    print('populate_reviews, gathering pmids')
+    base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
+
+    while True:
+        r = utils.requests_retry_session().get(base_url, params={
+            'db': 'pubmed',
+            'term': 'systematic review[ti] OR meta analysis[ti] OR cochrane database of systematic reviews[ta]',
+            'format': 'json',
+            'retmax': 10000,
+            'retstart': page * 10000,
+            'email': crud.eutils_email,
+            'tool': crud.eutils_tool,
+            'api_key': eutils_key,
+            'date_type': 'edat',
+            'mindate': (datetime.now().date() - timedelta(days=period)).strftime(
+                '%Y/%m/%d'),
+            'maxdate': '3000'
+        })
+        if not r:
+            break
+        json = r.json()
+        current_pmids = json['esearchresult']['idlist']
+        if not current_pmids or len(current_pmids) == 0:
+            break
+        pmids = pmids + current_pmids
+        print('page %s, pmid count: %s' % (page, len(pmids)))
+        page += 1
+
+    segments = utils.chunks(pmids, 100)
     for s in segments:
         while True:
             try:
@@ -176,8 +195,8 @@ def populate_reviews(period):
                     count = crud.articles_with_nctids(tuple(x for x in ids.pmids))
                     print(count)
                     if count and len(count) > 0:
-                        print('articles with links = ' + str(len(count)))
-                        print('inserting ' + str(article.pmid))
+                        print('articles with links: %s' % len(count))
+                        print('inserting %s' % article.pmid)
                         crud.pubmedarticle_to_db(article, 'systematic_reviews')
                         for trialpub in count:
                             crud.review_publication(article.pmid, trialpub, 9)
@@ -187,7 +206,7 @@ def populate_reviews(period):
                                                   nickname='crossrefbot')
                 if ids.nctids:
                     crud.pubmedarticle_to_db(article, 'systematic_reviews')
-                    print('nct ids in crossref = ' + str(len(ids.nctids)))
+                    print('nct ids in crossref: %s ' % len(ids.nctids))
                     for nct_id in ids.nctids:
                         crud.review_trial(article.pmid, nct_id, False, 'included', 'crossrefbot', 9)
                 if not ids.nctids and not ids.pmids:
@@ -297,16 +316,23 @@ def update_trial_publications(period):
     pmids = []
     page = 0
     print('update_trial_publications, gathering pmids')
+    base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
+
     while True:
-        base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
-        r = utils.retry_get(base_url,
-                            params={'db': 'pubmed', 'term': 'clinicaltrials.gov[si]', 'format': 'json',
-                                    'retmax': 10000,
-                                    'retstart': page * 10000,
-                                    'email': crud.eutils_email,
-                                    'tool': crud.eutils_tool, 'api_key': eutils_key, 'date_type': 'edat',
-                                    'mindate': (datetime.now() - timedelta(days=period)).strftime(
-                                        '%Y/%m/%d'), 'maxdate': 3000})
+        r = utils.retry_get(base_url, params={
+            'db': 'pubmed',
+            'term': 'clinicaltrials.gov[si]',
+            'format': 'json',
+            'retmax': 10000,
+            'retstart': page * 10000,
+            'email': crud.eutils_email,
+            'tool': crud.eutils_tool,
+            'api_key': eutils_key,
+            'date_type': 'edat',
+            'mindate': (datetime.now() - timedelta(days=period)).strftime(
+                '%Y/%m/%d'),
+            'maxdate': 3000
+        })
         if not r:
             break
         json = r.json()

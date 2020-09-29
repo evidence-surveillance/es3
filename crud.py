@@ -830,11 +830,19 @@ def pubmedarticle_to_db(article, table):
     """ save PubMedArticle object to the specified table """
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor()
+    split = article.year.split(' ')
+    year = None
+    for item in split:
+        if item.isdigit() and len(item) == 4:
+            year = item
+            break
+    if year is None:
+        raise TypeError('Year not found in date for pmid %s' % article.pmid)
     if table == 'trial_publications':
         cur.execute(
             "INSERT INTO trial_publications(trialpub_id, title, source, authors, publish_date, abstract, doi)" \
             " VALUES (%s,%s,%s,%s,%s,%s,%s) on conflict(trialpub_id) do nothing;",
-            (article.pmid, article.title, article.jrnl, ', '.join(article.authors), article.year.split(' ')[0],
+            (article.pmid, article.title, article.jrnl, ', '.join(article.authors), year,
              article.abstract,
              article.doi))
         conn.commit()
@@ -842,7 +850,7 @@ def pubmedarticle_to_db(article, table):
         cur.execute(
             "INSERT INTO systematic_reviews(review_id, title, source, authors, publish_date, abstract, doi)" \
             " VALUES (%s,%s, %s,%s,%s,%s,%s) on conflict(review_id) do nothing;",
-            (article.pmid, article.title, article.jrnl, ', '.join(article.authors), article.year.split(' ')[0],
+            (article.pmid, article.title, article.jrnl, ', '.join(article.authors), year,
              article.abstract, article.doi))
         conn.commit()
     conn.close()
