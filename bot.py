@@ -39,6 +39,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
         socketio = SocketIO(message_queue='amqp://localhost')
     ec = Client(api_key=eutils_key)
     cr = Crossref(mailto=config.MAIL_USERNAME)
+    print('bp1')
     if not review_doi:
         while True:
             try:
@@ -56,27 +57,41 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
             if sess_id:
                 socketio.emit('crossrefbot_update', {'msg': 'No trials found. Crossrefbot complete'}, room=sess_id)
             return
-    try:
-        if review_doi[-1] == '.':
-            review_doi = review_doi[:-1]
-        resp = cr.works(ids=[str(review_doi)])
-    except requests.HTTPError as e:
-        if sess_id:
-            socketio.emit('crossrefbot_update', {'msg': 'No trials found. Crossrefbot complete'}, room=sess_id)
-        print(e)
-        return
+    print('bp2')
+    retry_attempts = 0
+    while True:
+        try:
+            if review_doi[-1] == '.':
+                review_doi = review_doi[:-1]
+            resp = cr.works(ids=[str(review_doi)])
+            break
+        except requests.HTTPError as e:
+            if sess_id:
+                socketio.emit('crossrefbot_update', {'msg': 'No trials found. Crossrefbot complete'}, room=sess_id)
+            print(e)
+            return
+        except requests.exceptions.ConnectionError as e:
+            print(e)
+            time.sleep(10)
+            print('retrying...')
+            if retry_attempts >= 3:
+                raise Exception('failed too many times')
+                break
+            retry_attempts += 1
+    print('bp3')
     if resp['status'] == 'ok':
         parsed = resp['message']
         if "reference" in parsed:
             if sess_id:
-                socketio.emit('crossrefbot_update', {'msg': str(len(parsed[
-                                                                        'reference'])) + ' references found in crossref. trying to resolve these to PubMed articles...'},
-                              room=sess_id)
+                socketio.emit('crossrefbot_update', {
+                    'msg': '%s references in crossref. trying to resolve to PubMed articles' % len(parsed['reference'])
+                }, room=sess_id)
                 eventlet.sleep(0)
-            print(str(len(parsed['reference'])) + ' references found in crossref')
+            print('%s references found in crossref' % len(parsed['reference']))
             to_resolve = []
             references = parsed['reference']
             dois = [doi["DOI"] for doi in references if 'DOI' in doi]
+            print('bp4')
             if dois:
                 # if we get pubmed metadata for these DOIs, we can cross-check which dois match the ones in our set of references
                 # what if > 250
@@ -97,7 +112,8 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                                 paset = ec.efetch(db='pubmed', id=esr.ids)
                                 break
                             except (eutils.EutilsNCBIError, eutils.EutilsRequestError,
-                                    requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
+                                    requests.exceptions.SSLError, requests.exceptions.ConnectionError,
+                                    requests.exceptions.ReadTimeout, requests.exceptions.ChunkedEncodingError) as e:
                                 print(e)
                                 time.sleep(5)
                         pa_iter = iter(paset)
@@ -109,10 +125,11 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                             if pma.doi is not None and pma.doi in dois:
                                 dois.remove(pma.doi)
                                 to_resolve.append(pma.pmid)
+            print('bp5')
             remaining = [x for x in references if ('DOI' not in x or ('DOI' in x and x['DOI'] in dois)) and (
                     'first-page' in x or 'author' in x or 'article-title' in x or 'volume' in x or 'journal-title' in x or 'year' in x)]
             if remaining:
-                citation_pmids = ecitmatch_tools.batch_pmids_for_citation(remaining, debug=False)
+                citation_pmids = ecitmatch_tools.batch_pmids_for_citation(remaining, debug=True)
                 check_metadata = []
                 if citation_pmids:
                     for i, citation in enumerate(citation_pmids):
@@ -143,6 +160,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                         if pma.doi is not None and pma.doi in dois:
                             dois.remove(pma.doi)
                             to_resolve.append(pma.pmid)
+            print('bp6')
             try_doi = batch_doi2pmid(dois)
             if try_doi:
                 for doi in try_doi:
@@ -157,6 +175,7 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                             if len(i) == 11:
                                 nct_ids.append(i)
                                 continue
+            print('bp11')
             to_resolve = [str(x) for x in to_resolve]
             to_resolve = list(set(to_resolve))
             content = collections.namedtuple('ids', ['pmids', 'nctids'])
@@ -241,7 +260,9 @@ def batch_doi2pmid(dois):
             doi = doi[:-1]
         try:
             # what if one fails?!
+            print('bp7', doi)
             cit = cn.content_negotiation(ids=doi, format="citeproc-json")
+            print('bp7 end')
             if isinstance(cit, list):
                 for c in cit:
                     citations.append(c)
@@ -252,6 +273,7 @@ def batch_doi2pmid(dois):
             continue
     parsed_citations = []
     for x in citations:
+        print('bp8')
         try:
             cit = json.loads(x)
         except TypeError as e:
@@ -270,7 +292,9 @@ def batch_doi2pmid(dois):
             if 'family' in cit['author'][0]:
                 parsed_cit['aulast'] = cit['author'][0]['family']
         parsed_citations.append(parsed_cit)
-    pmids = ecitmatch_tools.batch_pmids_for_citation(parsed_citations, debug=False)
+    print('bp9')
+    pmids = ecitmatch_tools.batch_pmids_for_citation(parsed_citations, debug=True)
+    print('bp10')
     return pmids
 
 
