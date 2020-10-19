@@ -315,7 +315,9 @@ def batch_pmids_for_citation(citations, debug=False):
         while len(params['bdata']) < 1900 and len(joined) > 0:
             params['bdata'] += joined[-1] + '\r'
             joined.pop()
+        print('bp5.1', len(joined))
         req = utils.retry_get(base_uri, params=params)
+        print('bp5.2', len(joined))
         if not req:
             return None
         if req.status_code == 200:

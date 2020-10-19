@@ -66,15 +66,20 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
             resp = cr.works(ids=[str(review_doi)])
             break
         except requests.HTTPError as e:
-            if sess_id:
-                socketio.emit('crossrefbot_update', {'msg': 'No trials found. Crossrefbot complete'}, room=sess_id)
-            print(e)
-            return
+            if e.response.status_code == 404:
+                if sess_id:
+                    socketio.emit('crossrefbot_update', {'msg': 'No trials found. Crossrefbot complete'}, room=sess_id)
+                print(e)
+                return
+            else:
+                time.sleep(5)
+                print('retrying...', e)
+                continue
         except requests.exceptions.ConnectionError as e:
             print(e)
             time.sleep(10)
-            print('retrying...')
-            if retry_attempts >= 3:
+            print('connection error, retrying...')
+            if retry_attempts >= 6:
                 raise Exception('failed too many times')
                 break
             retry_attempts += 1
@@ -258,6 +263,8 @@ def batch_doi2pmid(dois):
     for doi in dois:
         if doi[-1] == '.':
             doi = doi[:-1]
+
+    while True:
         try:
             # what if one fails?!
             print('bp7', doi)
@@ -268,9 +275,15 @@ def batch_doi2pmid(dois):
                     citations.append(c)
             else:
                 citations.append(cit)
-        except Exception as e:
-            print(e)
-            continue
+            break
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in (500, 503):
+                time.sleep(5)
+                print('retrying...', e)
+                continue
+            else:
+                raise e
+
     parsed_citations = []
     for x in citations:
         print('bp8')
