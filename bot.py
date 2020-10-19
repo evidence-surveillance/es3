@@ -264,25 +264,26 @@ def batch_doi2pmid(dois):
         if doi[-1] == '.':
             doi = doi[:-1]
 
-    while True:
-        try:
-            # what if one fails?!
-            print('bp7', doi)
-            cit = cn.content_negotiation(ids=doi, format="citeproc-json")
-            print('bp7 end')
-            if isinstance(cit, list):
-                for c in cit:
-                    citations.append(c)
-            else:
-                citations.append(cit)
-            break
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code in (500, 503):
-                time.sleep(5)
-                print('retrying...', e)
-                continue
-            else:
-                raise e
+        while True:
+            try:
+                # what if one fails?!
+                print('bp7', doi)
+                cit = cn.content_negotiation(ids=doi, format="citeproc-json")
+                print('bp7 end')
+                if isinstance(cit, list):
+                    for c in cit:
+                        citations.append(c)
+                else:
+                    citations.append(cit)
+                break
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code in (500, 503):
+                    time.sleep(5)
+                    print('retrying...', e)
+                    continue
+                else:
+                    print(e)
+                    break
 
     parsed_citations = []
     for x in citations:
