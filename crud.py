@@ -14,42 +14,45 @@ eutils_key = config.EUTILS_KEY
 eutils_email = config.EUTILS_EMAIL
 eutils_tool = config.EUTILS_TOOL
 
-
-def get_trial_data(trial_id):
+def get_trialpage_data(trial_id):
     """ Get data to display on /trial page """
+    if not trial_id.startswith('NCT'):
+        return {}
+
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    if trial_id.startswith('NCT'):
-        cur.execute("""
-            SELECT te.nct_id, 
-               COALESCE(official_title, brief_title) AS title,
-               brief_summary,
-               enrollment AS participants,
-               array_agg(rr.review_id) AS review_links,
-               array_agg(rr.user_id) AS review_linking_user_id,
-               array_agg(rr.upvotes) AS review_link_upvotes,
-               array_agg(rr.downvotes) AS review_link_downvotes,
-               array_agg(rr.verified) AS review_link_verified,
-               array_agg(rr.relationship) AS review_link_relationship,
-               array_agg(rr.nickname) AS review_link_user_nickname
-            FROM tregistry_entries te
-            LEFT JOIN review_rtrial rr ON te.nct_id = rr.nct_id
-            WHERE te.nct_id = %s
-            GROUP BY te.nct_id;
-        """, (trial_id,))
-    else:
-        cur.execute("""
-            SELECT tp.trialpub_id, title, abstract, 
-            array_agg(rt.review_id) as review_links, 
-            array_agg(rt.user_id) as review_linking_user_id
-            FROM trial_publications tp
-            LEFT JOIN review_trialpubs rt on tp.trialpub_id = rt.trialpub_id
-            WHERE tp.trialpub_id = %s
-            GROUP BY tp.trialpub_id;
-        """, (trial_id,))
+
+    cur.execute("""
+        SELECT nct_id, 
+           COALESCE(official_title, brief_title) AS title,
+           brief_summary,
+           completion_date,
+           enrollment AS participants
+        FROM tregistry_entries
+        WHERE nct_id = %s;
+    """, (trial_id,))
+
     trial = cur.fetchone()
+
+    cur.execute("""
+        SELECT tp.trialpub_id, title, abstract, publish_date
+        FROM trial_publications tp
+        INNER JOIN trialpubs_rtrial tr on tp.trialpub_id = tr.trialpub_id
+        WHERE tr.nct_id = %s
+        order by publish_date desc;
+    """, (trial_id,))
+    publications = cur.fetchall()
+
+    cur.execute("""
+        SELECT sr.review_id, sr.title, rr.verified, rr.relationship, rr.user_id
+        FROM systematic_reviews sr
+        INNER JOIN review_rtrial rr ON sr.review_id = rr.review_id
+        WHERE rr.nct_id = %s;
+    """, (trial_id,))
+    reviews = cur.fetchall()
+
     conn.close()
-    return trial
+    return trial, publications, reviews
 
 
 def review_lock_status(review_id):
@@ -836,15 +839,26 @@ def pubmedarticle_to_db(article, table):
         if item.isdigit() and len(item) == 4:
             year = item
             break
+
+    if year is None:
+        split = article.year.split('-')
+        for item in split:
+            if item.isdigit() and len(item) == 4:
+                year = item
+                break
+
     if year is None:
         raise TypeError('Year not found in date for pmid %s' % article.pmid)
     if table == 'trial_publications':
-        cur.execute(
-            "INSERT INTO trial_publications(trialpub_id, title, source, authors, publish_date, abstract, doi)" \
-            " VALUES (%s,%s,%s,%s,%s,%s,%s) on conflict(trialpub_id) do nothing;",
-            (article.pmid, article.title, article.jrnl, ', '.join(article.authors), year,
-             article.abstract,
-             article.doi))
+        cur.execute("""
+            INSERT INTO trial_publications(trialpub_id, title, source, authors, publish_date, abstract, doi) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s) 
+            ON CONFLICT(trialpub_id) DO 
+            UPDATE SET title = %s, source = %s, authors = %s, publish_date = %s, abstract = %s, doi = %s;
+            """, (article.pmid, article.title, article.jrnl, ', '.join(article.authors),
+                  year, article.abstract, article.doi,
+                  article.title, article.jrnl, ', '.join(article.authors),
+                  year, article.abstract, article.doi))
         conn.commit()
     elif table == 'systematic_reviews':
         cur.execute(
@@ -854,6 +868,8 @@ def pubmedarticle_to_db(article, table):
              article.abstract, article.doi))
         conn.commit()
     conn.close()
+
+
 
 
 def articles_with_nctids(pmid_list):

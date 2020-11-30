@@ -146,8 +146,8 @@ def populate_reviews(period):
             'db': 'pubmed',
             'term': 'systematic review[ti] OR meta analysis[ti] OR cochrane database of systematic reviews[ta]',
             'format': 'json',
-            'retmax': 10000,
-            'retstart': page * 10000,
+            'retmax': 50000,
+            'retstart': page * 50000,
             'email': crud.eutils_email,
             'tool': crud.eutils_tool,
             'api_key': eutils_key,
@@ -172,8 +172,7 @@ def populate_reviews(period):
             try:
                 articles = ec.efetch(db='pubmed', id=s)
                 break
-            except (
-                    eutils.EutilsNCBIError, eutils.EutilsRequestError,
+            except (eutils.EutilsNCBIError, eutils.EutilsRequestError,
                     requests.exceptions.SSLError,
                     requests.exceptions.ConnectionError) as e:
                 print(e)
@@ -185,6 +184,9 @@ def populate_reviews(period):
             except StopIteration:
                 break
             print('-----------------' + article.pmid + '-------------------------')
+            # if crud.review_medtadata_db(article.pmid):
+            #     print('Already exists in db, skipping', article.pmid)
+            #     continue
             if article.doi is not None:
                 ids = bot.check_trialpubs_nctids(article.pmid, article.doi)
             else:
@@ -300,6 +302,7 @@ def fill_missing_bots():
     conn.close()
 
 
+
 def update_trial_publications(period):
     """
     Pull the newest pubmed articles that reference ct.gov IDs and save them to the database
@@ -342,6 +345,7 @@ def update_trial_publications(period):
         pmids = pmids + current_pmids
         print('page %s, pmid count: %s' % (page, len(pmids)))
         page += 1
+
 
     segments = utils.chunks(pmids, 100)
     for s in segments:

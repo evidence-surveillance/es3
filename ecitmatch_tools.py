@@ -205,6 +205,8 @@
 
 from urllib.parse import unquote
 import utils
+import time
+import requests
 
 PUNCS_WE_DONT_LIKE = "[],.()<>'/?;:\"&"
 
@@ -316,7 +318,15 @@ def batch_pmids_for_citation(citations, debug=False):
             params['bdata'] += joined[-1] + '\r'
             joined.pop()
         print('bp5.1', len(joined))
-        req = utils.retry_get(base_uri, params=params)
+        while True:
+            try:
+                print(base_uri, params)
+                req = requests.get(base_uri, params=params, timeout=300)
+                break
+            except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError, requests.exceptions.Timeout) as e:
+                print('timeout other error, retrying', e)
+                time.sleep(10)
+
         print('bp5.2', len(joined))
         if not req:
             return None

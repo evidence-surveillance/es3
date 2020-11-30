@@ -1,3 +1,7 @@
+import eventlet
+
+eventlet.monkey_patch()
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity, linear_kernel
 import crud
@@ -12,7 +16,7 @@ from habanero import Crossref, cn
 import json
 from app import celery_inst
 from flask_socketio import SocketIO
-import eventlet
+
 import re
 import bs4
 import collections
@@ -50,7 +54,14 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                     requests.exceptions.ConnectionError) as e:
                 print(e)
                 time.sleep(5)
-        pa = next(iter(paset))
+        try:
+            pa = next(iter(paset))
+        except StopIteration as e:
+            print('##EMPTY ITERATOR', e)
+            print('retrying...')
+            time.sleep(60)
+            return check_trialpubs_nctids(review_id, review_doi, sess_id)
+
         if hasattr(pa, 'doi'):
             review_doi = pa.doi
         if not review_doi:
@@ -73,7 +84,8 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                 return
             else:
                 time.sleep(5)
-                print('retrying...', e)
+                print('UNHANDLED HTTP ERROR', e)
+                print('retrying...')
                 continue
         except requests.exceptions.ConnectionError as e:
             print(e)
@@ -99,20 +111,23 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
             print('bp4')
             if dois:
                 # if we get pubmed metadata for these DOIs, we can cross-check which dois match the ones in our set of references
-                # what if > 250
+                # what if > 250 TODO: WARNING:eutils._internal.client:NCBI found 251 results, but we truncated the reply at 250 results; see https://github.com/biocommons/eutils/issues/124/
                 chunk_dois = utils.chunks(dois, 250)
                 for dois in chunk_dois:
                     while True:
+                        print('bp4.1', ' OR '.join(['"' + doi + '"[AID]' for doi in dois]))
                         try:
-                            esr = ec.esearch(db='pubmed', term=' OR '.join(['"' + doi + '"[AID]' for doi in dois]))
+                            with eventlet.Timeout(300):
+                                esr = ec.esearch(db='pubmed', term=' OR '.join(['"' + doi + '"[AID]' for doi in dois]))
                             break
                         except (eutils.EutilsNCBIError, eutils.EutilsRequestError,
                                 requests.exceptions.SSLError, requests.exceptions.ConnectionError,
-                                lxml.etree.XMLSyntaxError) as e:
-                            print(e)
+                                lxml.etree.XMLSyntaxError, eventlet.timeout.Timeout) as e:
+                            print('possible timeout?', e)
                             time.sleep(5)
                     if esr.ids:
                         while True:
+                            print('bp4.2', esr.ids)
                             try:
                                 paset = ec.efetch(db='pubmed', id=esr.ids)
                                 break
@@ -150,10 +165,12 @@ def check_trialpubs_nctids(review_id, review_doi=None, sess_id=None):
                 if check_metadata:
                     while True:
                         try:
-                            paset = ec.efetch(db='pubmed', id=check_metadata)
+                            with eventlet.Timeout(300):
+                                paset = ec.efetch(db='pubmed', id=check_metadata)
                             break
                         except (eutils.EutilsNCBIError, eutils.EutilsRequestError,
-                                requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
+                                requests.exceptions.SSLError, requests.exceptions.ConnectionError, eventlet.timeout.Timeout) as e:
+                            print('possible timeout?')
                             print(e)
                             time.sleep(5)
                     pa_iter = iter(paset)
@@ -268,7 +285,7 @@ def batch_doi2pmid(dois):
             try:
                 # what if one fails?!
                 print('bp7', doi)
-                cit = cn.content_negotiation(ids=doi, format="citeproc-json")
+                cit = cn.content_negotiation(ids=doi, format="citeproc-json", timeout=300)
                 print('bp7 end')
                 if isinstance(cit, list):
                     for c in cit:
@@ -277,13 +294,20 @@ def batch_doi2pmid(dois):
                     citations.append(cit)
                 break
             except requests.exceptions.HTTPError as e:
-                if e.response.status_code in (500, 503):
-                    time.sleep(5)
+                if e.response.status_code == 503:
                     print('retrying...', e)
+                    time.sleep(5)
                     continue
-                else:
-                    print(e)
+                elif e.response.status_code == 500:
+                    print('500 error', e.response.json())
                     break
+                else:
+                    print('UNHANDLED HTTP ERROR', e)
+                    break
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                print('timeout or connection error, retrying', e)
+                time.sleep(5)
+                continue
 
     parsed_citations = []
     for x in citations:
@@ -652,15 +676,21 @@ def cochranebot(doi, review_id, sess_id=None):
         socketio.emit('cochranebot_update', {'msg': 'searching cochrane for included studies'}, room=sess_id)
         socketio.sleep(0)
     base_url = "https://www.cochranelibrary.com/cdsr/doi/{}/references".format(doi)
-    try:
-        r = requests.get(base_url, headers={
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36'})
-    except requests.exceptions.TooManyRedirects:
-        if sess_id:
-            socketio.emit('cochranebot_update', {'msg': 'nothing found by cochranebot'}, room=sess_id)
-            socketio.sleep(0)
-            socketio.emit('cochranebot_update', {'msg': 'cochranebot complete'}, room=sess_id)
-        return
+    while True:
+        try:
+            r = requests.get(base_url, headers={
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36'})
+            break
+        except requests.exceptions.TooManyRedirects:
+            if sess_id:
+                socketio.emit('cochranebot_update', {'msg': 'nothing found by cochranebot'}, room=sess_id)
+                socketio.sleep(0)
+                socketio.emit('cochranebot_update', {'msg': 'cochranebot complete'}, room=sess_id)
+            return
+        except requests.exceptions.ChunkedEncodingError as e:
+            print(e)
+            print('retrying... chunked encoding error, ')
+            time.sleep(10)
     if r.status_code == 200:
         soup = bs4.BeautifulSoup(r.content, 'html.parser')
         spl_doi = doi.split('.')[2]
