@@ -13,6 +13,9 @@ from dateutil.parser import parse
 import math
 import random
 import numpy
+import scipy
+from zipfile import BadZipFile
+from time import sleep
 
 res_path = config.RESOURCES_PATH
 
@@ -178,7 +181,18 @@ def most_recent_tfidf():
     list_of_files = glob.glob(
         res_path + '/models/tfidf/tfidf_matrix_*.npz')  # * means all if need specific format then *.csv
     latest_file = max(list_of_files, key=os.path.getmtime)
-    return latest_file
+    retries = 0
+    while True:
+        retries += 1
+        try:
+            npz = scipy.sparse.load_npz(latest_file)
+            break
+        except (AttributeError, BadZipFile) as e:
+            print('Issue when loading tfidf matrix, retrying in 10 sec', e)
+            sleep(15)
+        if retries > 5:
+            raise BadZipFile('Issue when loading tfidf matrix, over limit retry counter')
+    return npz
 
 
 def most_recent_tsne():

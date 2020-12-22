@@ -41,7 +41,7 @@ def _gen_T_v2(date):
 
 def _matfac_results(date):
     K = 50
-    sparse_R = scipy.sparse.load_npz(utils.most_recent_tfidf())
+    sparse_R = utils.most_recent_tfidf()
     svd = TruncatedSVD(n_components=200)
     R = svd.fit_transform(sparse_R)
     np.save('models/matfac/truncated_r_' + date, R)
@@ -70,9 +70,9 @@ def _matfac_results(date):
 
 
 def _matfac_trials():
-    print utils.most_recent_matfac()
-    print utils.most_recent_matfac_pmids()
-    print utils.most_recent_matfac_nctids()
+    print(utils.most_recent_matfac())
+    print(utils.most_recent_matfac_pmids())
+    print(utils.most_recent_matfac_nctids())
     remote_tasks.remove_bot_votes(11)
     results = np.load(utils.most_recent_matfac())
     pmid_arr = np.load(utils.most_recent_matfac_pmids())
@@ -91,6 +91,6 @@ def _matfac_trials():
             top_trials = nct_ids[sorted].flatten()
             if len(set(top_trials) & set(incl)) >= len(incl) / 2:
                 for i, trial in enumerate(set(top_trials[:100]) - set(incl)):
-                    print pmid_arr[c], trial
+                    print(pmid_arr[c], trial)
                     crud.review_trial(pmid_arr[c], trial, False, 'relevant', 'matfacbot', 11)
     con.close()

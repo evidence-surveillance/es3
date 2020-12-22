@@ -158,6 +158,7 @@ def populate_reviews(period):
         })
         if not r:
             break
+
         json = r.json()
         current_pmids = json['esearchresult']['idlist']
         if not current_pmids or len(current_pmids) == 0:
@@ -435,7 +436,7 @@ def update_bots(period=None):
 def regenerate_tsne():
     """ regen the TSNE matrix & plot image with the latest trial data """
     date = datetime.now().date().strftime('%d-%m-%Y')
-    tfidf_matrix = scipy.sparse.load_npz(utils.most_recent_tfidf())
+    tfidf_matrix = utils.most_recent_tfidf()
     _tsne(tfidf_matrix, date)
     new_tsne = numpy.load('models/tsne/tsne_matrix_' + date + '.npy')
     # generate new _tsne background plot

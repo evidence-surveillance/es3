@@ -376,7 +376,7 @@ def basicbot2(review_id=None, sess_id=None):
         conn.close()
         if sess_id:
             socketio.emit('basicbot2_update', {'msg': 'triggering basicbot2'}, room=sess_id)
-        tfidf_matrix = scipy.sparse.load_npz(utils.most_recent_tfidf())
+        tfidf_matrix = utils.most_recent_tfidf()
         ids = np.load(utils.most_recent_tfidf_labels())
         trials = list(list(zip(*trials))[0])
         ix = np.isin(ids, trials)
@@ -421,7 +421,7 @@ def basicbot2_freetext(review_id=None, sess_id=None):
     if trials:
         if sess_id:
             socketio.emit('basicbot2_update', {'msg': 'triggering basicbot2'}, room=sess_id)
-        tfidf_matrix = scipy.sparse.load_npz(utils.most_recent_tfidf())
+        tfidf_matrix = utils.most_recent_tfidf()
         ids = np.load(utils.most_recent_tfidf_labels())
         trials = list(list(zip(*trials))[0])
         ix = np.isin(ids, trials)
@@ -470,7 +470,7 @@ def docsim(review_id, sess_id=None):
     if sess_id:
         socketio.emit('docsim_update', {'msg': 'vectorising stuff...'}, room=sess_id)
         eventlet.sleep(0)
-    tfidf_matrix = scipy.sparse.load_npz(utils.most_recent_tfidf())
+    tfidf_matrix = utils.most_recent_tfidf()
     idf_indices = [trials_vectorizer.vocabulary_[feature_name] for feature_name in tf_transformer.get_feature_names() if
                    feature_name in trials_vectorizer.vocabulary_.keys()]
     tf_indices = [tf_transformer.vocabulary_[feature_name] for feature_name in trials_vectorizer.get_feature_names() if
@@ -526,7 +526,7 @@ def docsim_freetext(document, sess_id=None):
     if sess_id:
         socketio.emit('docsim_update', {'msg': 'vectorising stuff...'}, room=sess_id)
         eventlet.sleep(0)
-    tfidf_matrix = scipy.sparse.load_npz(utils.most_recent_tfidf())
+    tfidf_matrix = utils.most_recent_tfidf()
     idf_indices = [trials_vectorizer.vocabulary_[feature_name] for feature_name in tf_transformer.get_feature_names() if
                    feature_name in trials_vectorizer.vocabulary_.keys()]
     tf_indices = [tf_transformer.vocabulary_[feature_name] for feature_name in trials_vectorizer.get_feature_names() if
