@@ -189,7 +189,7 @@ def most_recent_tfidf():
             break
         except (AttributeError, BadZipFile) as e:
             print('Issue when loading tfidf matrix, retrying in 10 sec', e)
-            sleep(15)
+            sleep(10)
         if retries > 5:
             raise BadZipFile('Issue when loading tfidf matrix, over limit retry counter')
     return npz
