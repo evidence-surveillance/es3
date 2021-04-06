@@ -11,7 +11,7 @@
                     {{ wtf.quick_form(new_user)}}<br>
 
                     <h3>Delete user(s)</h3>
-                    <form method="post" action="{{ url_for('admin_panel') }}">
+                    <form method="post" action="{{ url_for('admin_panel', _external=True, _scheme='https') }}">
                         <table class = "table">
                             <tr>
                                 <th>Login ID</th>

@@ -12,7 +12,7 @@
         <div class="row">
             <div class="col-sm-6 col-sm-offset-3">
 
-                {{ wtf.quick_form(changepw_form, action=url_for('change_password')) }}
+                {{ wtf.quick_form(changepw_form, action=url_for('change_password', _external=True, _scheme='https')) }}
             </div><!--/col-sm-6-->
         </div><!--/row-->
     </div>

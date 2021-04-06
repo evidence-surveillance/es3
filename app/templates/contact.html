@@ -11,7 +11,7 @@
                 <!-- Tab panes -->
                 <div class="jumbotron">
                     <h2>Contact</h2>
-                    {{ wtf.quick_form(contact_form, action=url_for('contact')) }}
+                    {{ wtf.quick_form(contact_form, action=url_for('contact', _external=True, _scheme='https')) }}
                 </div>
 
             </div>

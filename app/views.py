@@ -474,7 +474,7 @@ def information():
 def logout():
     """ log out current user & redirect to login page """
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('login', _external=True, _scheme='https'))
 
 
 @app.route('/login', methods=['GET'])
@@ -503,7 +503,7 @@ def submit_login():
                 return render_template('login.html', loginform=login_form, forgotpw=ForgotPasswordForm(),
                                        accessform=RequestRegisterForm())
             login_user(registered_user)
-            return redirect(request.args.get('next') or url_for('index'))
+            return redirect(request.args.get('next') or url_for('index', _external=True, _scheme='https'))
         else:
             return render_template('login.html', loginform=login_form, forgotpw=ForgotPasswordForm(),
                                    accessform=RequestRegisterForm())
@@ -911,7 +911,7 @@ def alter_users():
                 flash('New user ' + form.new_email.data + ' created successfully')
             else:
                 flash('User already exists')
-            return redirect(url_for('admin_panel'))
+            return redirect(url_for('admin_panel', _external=True, _scheme='https'))
         else:
             return render_template('adminpanel.html', new_user=form, users=User.get_all())
     elif request.form['submit'] == "Delete Selected":
@@ -925,7 +925,7 @@ def alter_users():
             if request.form[x] == "on":
                 User.delete(x)
                 flash('User ' + x + ' deleted successfully')
-            return redirect(url_for('admin_panel'))
+            return redirect(url_for('admin_panel', _external=True, _scheme='https'))
     return render_template('adminpanel.html', new_user=NewUserForm(), users=User.get_all())
 
 
@@ -958,7 +958,7 @@ def contact():
             flash('Message sent')
         else:
             flash(', '.join(form.email.errors + form.nickname.errors + form.content.errors))
-        return redirect(url_for('contact'))
+        return redirect(url_for('contact', _external=True, _scheme='https'))
 
     elif request.method == 'GET':
         return render_template('contact.html', contact_form=ContactForm())
@@ -991,7 +991,7 @@ def register():
         flash('Access requested successfully.')
     else:
         flash('Please enter a valid email address')
-    return redirect(url_for('login'))
+    return redirect(url_for('login', _external=True, _scheme='https'))
 
 
 @app.route('/reset', methods=["GET", "POST"])
@@ -1000,10 +1000,6 @@ def reset():
     send reset password email to specified user email
     @return: refreshed page indicating success or failure
     """
-    print(url_for('login'))
-    print(url_for('login', _external=True))
-    print(url_for('index'))
-    print(url_for('index', _external=True))
     form = ForgotPasswordForm()
     if form.validate_on_submit():
         user = User.get(form.forgot_email.data)
@@ -1012,7 +1008,8 @@ def reset():
         recover_url = url_for(
             'reset_with_token',
             token=token,
-            _external=True)
+            _external=True,
+            _scheme='https')
         html = render_template(
             'recover.html',
             recover_url=recover_url)
@@ -1030,7 +1027,7 @@ def reset():
         }
         mail.send.create(data=data)
         flash('Password reset email sent to ' + user.id)
-        return redirect(url_for('login', _external=True))
+        return redirect(url_for('login', _external=True, _scheme='https'))
     return render_template('login.html', loginform=EmailPasswordForm(), forgotpw=ForgotPasswordForm(),
                            accessform=RequestRegisterForm())
 
@@ -1054,7 +1051,7 @@ def reset_with_token(token):
         user.change_password(user.set_password(password))
         login_user(user)
         flash('Password changed successfully!')
-        return redirect(url_for('index'))
+        return redirect(url_for('index', _external=True, _scheme='https'))
     return render_template('reset_with_token.html', form=form, token=token)
 
 

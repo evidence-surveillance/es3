@@ -21,6 +21,9 @@ app.extensions['bootstrap']['cdns']['jquery'] = WebCDN(
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
+app.config.update({
+    'PREFERRED_URL_SCHEME': 'https'
+})
 #app.config['SERVER_NAME'] = 'es3-bidh.sydney.edu.au'
 #app.config['MAIL_SERVER'] = config.MAIL_SERVER
 #app.config['MAIL_PORT'] = config.MAIL_PORT

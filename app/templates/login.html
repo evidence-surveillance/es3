@@ -30,12 +30,12 @@
                     <div role="tabpanel" class="tab-pane" id="register">
                         We currently restrict access to some features. You can request an account here and we will try to get back to you as soon as possible!
                         <hr>
-                        {{ wtf.quick_form(accessform, action=url_for('register')) }}
+                        {{ wtf.quick_form(accessform, action=url_for('register', _external=True, _scheme='https')) }}
                     </div>
                     <div role="tabpanel" class="tab-pane" id="reset">
                         Enter the email associated with your account and we will send you a new password.
                         <hr>
-                        {{ wtf.quick_form(forgotpw, action=url_for('reset')) }}
+                        {{ wtf.quick_form(forgotpw, action=url_for('reset', _external=True, _scheme='https')) }}
                     </div>
                 </div>
 
