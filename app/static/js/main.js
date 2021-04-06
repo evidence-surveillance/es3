@@ -513,7 +513,7 @@ $(document).ready(function () {
                     $('#link_counts').html(
                         `<div><a href="/browse">
                             ${numberWithCommas(data['reviews'])}
-                            <small style="color: #337ab7 !important;"> systematic reviews</small>
+                            <small style="color: inherit !important;"> systematic reviews</small>
                             </a>
                             <small> and </small>
                             ${numberWithCommas(data['trials'])}
