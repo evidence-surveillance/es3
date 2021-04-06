@@ -406,7 +406,8 @@ def update_tregistry_entries(period):
         path = "nct_xml/NCT*.xml"
         for i, fname in enumerate(glob.glob(path)):
             if i % 100 == 0:
-                print('chunk %s, %sk/10k: %s' % (down_chunk, i / 1000, fname[8:19]))  # 8:19 trying to return just nctid
+                nct = fname[8:19]  # 8:19 trying to return just nctid
+                print('chunk %s, %sk/10k: %s' % (down_chunk, i / 1000, nct))
             crud.update_record(fname)
             os.remove(fname)
 
