@@ -5,7 +5,7 @@
 /*body { padding-bottom: 150px; }*/
 
 .navbar, .navbar-inverse, .navbar-nav, .navbar-default, .navbar-brand, #nav-search, #id-search, a.footer-link, #footer, .navbar-inverse .navbar-nav > li > a, .navbar-nav > a {
-    color: #e68c00 !important;
+    color: #e64626 !important;
     font-weight: bold;
     font-size: 1.6rem;
 }
@@ -19,6 +19,10 @@
 
 .nav-tabs > li.active > a {
     background-color: #eee !important;
+}
+
+.title-page a, #info-content a {
+    color: #e64626 !important;
 }
 
 .jumbotron.tab-content {
@@ -47,6 +51,10 @@ body {
 
 .font-bold {
     font-weight: bold;
+}
+
+input.danger {
+    border: .2rem solid #dc3545;
 }
 
 .checkbox {
@@ -102,13 +110,19 @@ body {
 /*}*/
 
 article {
-    /*padding-bottom: 100px;*/
-    /* Height of the footer element */
+    padding-bottom: 100px;
+     /*Height of the footer element */
+}
+
+.git-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
 }
 
 footer > * {
     margin: 0 1rem;
-    color: white;
 }
 
 footer > *:hover {
@@ -122,7 +136,15 @@ footer {
     left: 0;
     padding: 1rem;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    background: white !important;
+    align-items: center;
+    border-top: .1rem solid grey;
+}
+
+#footer img {
+    width: 220px;
+    height: auto;
 }
 
 @media screen and (min-width: 750px) {
@@ -135,15 +157,16 @@ footer {
     font-size: 1.6rem;
 }
 
-.faq-collapsible > i {
+.chevron-collapsible > i {
     transition: all .5s;
+    margin-left: .4rem;
 }
 
-.faq-collapsible.collapsed > i {
-    transform: rotate(180deg);
+.chevron-collapsible:not(.collapsed) i {
+    transform: rotate(90deg);
 }
 
-.faq-collapsible:not(.collapsed) {
+.chevron-collapsible:not(.collapsed) {
     margin-bottom: 1rem;
 }
 
@@ -184,6 +207,11 @@ footer {
     cursor: pointer;
 }
 
+
+.fixed-width {
+    max-width: 1200px;
+    margin: auto;
+}
 
 @media screen and (min-width: 1400px) {
     #plot.home-plot {
@@ -253,6 +281,7 @@ footer {
 .logo-brand {
     font-family: Open Sans, sans-serif;
     font-weight: bold;
+    color: #e64626;
 }
 
 
