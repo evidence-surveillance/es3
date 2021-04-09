@@ -7,7 +7,10 @@
             <title>Evidence Surveillance Synthesis and Sharing (ES3)</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             {%- block styles %}
-                <link href="{{ bootstrap_find_resource('css/bootstrap.css', cdn='bootstrap') }}" rel="stylesheet">
+{#                <link href="{{ bootstrap_find_resource('css/bootstrap.css', cdn='bootstrap') }}" rel="stylesheet">#}
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+                      integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l"
+                      crossorigin="anonymous">
                 <link rel="stylesheet" href="../static/css/style.css" as="style" onload="this.rel='stylesheet'">
                 <link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-1.3.4.min.css"
                       type="text/css">
@@ -24,7 +27,88 @@
         <body>
         <div id="wrapper">
             {% block navbar %}
-                <nav class="navbar navbar-inverse">
+                <nav class="navbar navbar-expand-xl navbar-dark bg-dark">
+                    <a class="navbar-brand logo-brand" href="/">
+                        <span class="flip-v-axis">3</span>S<sup>3</sup>
+                    </a>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse"
+                            data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <form class="navbar-form d-flex"
+                              action="{{ url_for('search', _external=True, _scheme='https') }}">
+                            <div class="input-group">
+                                <input name="searchterm" id="id_search" type="text" class="form-control"
+                                       placeholder="Keywords, PMID, DOI..">
+                                <div class="input-group-append">
+                                    <button type="submit" id="nav_search" class="btn btn-outline-light"><i
+                                            class="fa fa-search"></i></button>
+                                </div>
+                            </div>
+                        </form>
+                        <ul class="navbar-nav ml-2 mr-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="/browse">Browse</a>
+                            </li>
+                            {% if current_user.is_authenticated %}
+                                <li class="nav-item">
+                                    <a class="nav-link" id="recommender-titlebar" href="/blank">Create</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/saved">Saved Reviews</a>
+                                </li>
+                            {% endif %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/information">Information</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/contact">Contact</a>
+                            </li>
+
+                        </ul>
+                        <ul class="navbar-nav">
+                            {% if current_user.is_authenticated %}
+                                <li class="nav-item dropdown">
+                                    <a href="#" class="dropdown-toggle nav-link"
+                                       id="navbarDropdownMenuLink" data-toggle="dropdown"
+                                       role="button">
+                                        {{ current_user.id }}<span class="caret"></span>
+                                    </a>
+                                    <div class="dropdown-menu">
+                                        {% if current_user.permissions == 'admin' %}
+                                            <a class='dropdown-item'
+                                               href="{{ url_for('admin_panel', _external=True, _scheme='https') }}">Admin</a>
+                                        {% endif %}
+                                        <a class='dropdown-item'
+                                           href="{{ url_for('profile', _external=True, _scheme='https') }}">
+                                            Change Password
+                                        </a>
+                                        <div class="divider dropdown-item"></div>
+                                        <a class='dropdown-item'
+                                           href="{{ url_for('logout', _external=True, _scheme='https') }}">
+                                            Logout
+                                        </a>
+                                    </div>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('login', _external=True, _scheme='https') }}">
+                                        Login/Register
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                </nav>
+
+
+
+                {#<nav class="navbar navbar-inverse">
                     <div class="container-fluid">
                         <!-- Brand and toggle get grouped for better mobile display -->
                         <div class="navbar-header">
@@ -45,7 +129,7 @@
                                     <input name="searchterm" id="id_search" type="text" class="form-control"
                                            placeholder="Keywords, PMID, DOI..">
                                     <div class="input-group-btn">
-                                        <button type="submit" id="nav_search" class="btn btn-default"><i
+                                        <button type="submit" id="nav_search" class="btn btn-primary"><i
                                                 class="glyphicon glyphicon-search"></i></button>
                                     </div>
                                 </div>
@@ -90,7 +174,7 @@
                             {% endif %}
                         </div><!-- /.navbar-collapse -->
                     </div><!-- /.container-fluid -->
-                </nav>
+                </nav>#}
             {%- endblock navbar %}
             <article>
                 <div class="container progress-container">
@@ -142,11 +226,14 @@
             </footer>
 
             {% block scripts %}
-                <script src="{{ bootstrap_find_resource('jquery.js', cdn='jquery') }}"></script>
-                <script src="{{ bootstrap_find_resource('js/bootstrap.js', cdn='bootstrap') }}"></script>
+                <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+                        crossorigin="anonymous"></script>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
+                        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns"
+                        crossorigin="anonymous"></script>
                 <script src="../static/js/lib/moment.min.js" type="application/javascript"></script>
                 <script src="../static/js/lib/jquery.upvote.js" type="application/javascript"></script>
-                <script src="../static/js/lib/http_code.jquery.com_ui_1.12.1_jquery-ui.js"></script>
+                {#                <script src="../static/js/lib/http_code.jquery.com_ui_1.12.1_jquery-ui.js"></script>#}
                 <script src="../static/js/main.js" type="application/javascript"></script>
                 <script type="text/javascript"
                         src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>

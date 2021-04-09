@@ -4,23 +4,23 @@
 
 
     <div class="container pg_content">
-        <h1 class="display-3 text-left">Browse by category</h1>
+        <h1 class="text-left">{{ title or 'Browse by Category' }}</h1>
         <hr>
 
-        <div class="row">
+        <div>
 
-        <div class="checkbox">
-            <input type="checkbox" id="verified-only">
-            <label for="verified-only">Verified only</label>
-        </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="verified-only">
+                <label class="form-check-label" for="verified-only">Verified only</label>
+            </div>
 
 
             <ul class="list-group">
 
-                {% for category in categories %}
-                    <li class="list-group-item">
-                        <span class="badge" id="{{ category.code }}">0</span>
-                        <a href="/category/{{ category.id }}">{{ category.name }}</a>
+                {% for item in items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ item.href }}">{{ item.name }}</a>
+                        <span class="badge badge-secondary" id="{{ item.badge_code }}">0</span>
                     </li>
                 {% endfor %}
 

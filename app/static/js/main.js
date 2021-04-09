@@ -109,20 +109,148 @@ $(document).ready(function () {
     // }
 
 
-    // im putting all code for /trial path in this section because this file (and the rest of the app) is the definition
-    // of spaghetti and i dont want to get lost
-    if (window.location.pathname === '/trial' && window.location.href.indexOf('trialid') > -1) {
-        console.log('on trial page');
-        socket.on('my_response', msg => {
-            console.log('websocket connected, requesting data');
-            socket.emit('get_trial', {trial_id: getUrlParameter('trialid')});
-            $('.progress_div').slideDown(1000);
-        });
-        socket.on('trial_data', msg => {
-            $('#temp_json').text(JSON.stringify(msg.trial, null, 2));
-            $('.progress_div').slideUp(1000);
-        });
+    // TRIAL PAGES
+    // this file is spaghetti
+    if (window.location.pathname?.startsWith('/trials/')) {
+
     }
+
+    //
+    // /**
+    //  * Set the current published trial articles page
+    //  * @param num =  page num
+    //  */
+    // const setTrialPubPage = num => {
+    //     const maxPage = $('#pubpages').children().length;
+    //     const $nav = $('#pubpage-nav');
+    //
+    //     // Extra logic to change visible page numbers if we have more than 5 pages
+    //     if (maxPage > 5) {
+    //
+    //         // This is initially the pagenum of the first of the 5 pager buttons
+    //         // Incremented by 1 per iteration as we loop over the buttons and set their new values
+    //         let numToSet = Math.min(Math.max(num - 2, 1), maxPage - 4);
+    //         $('#pubpage-nav').find('a').each((i, page) => {
+    //             const action = $(page).attr('data-page');
+    //             if (isNaN(action)) return;
+    //             $(page).attr('data-page', numToSet).text(numToSet);
+    //             numToSet++;
+    //         });
+    //
+    //     }
+    //     $nav.find('a').parent().removeClass('active');
+    //     $nav.find(`a[data-page="${num}"]`).parent().addClass('active');
+    //
+    //     // Set number on the page buttons
+    //     // $('#pubpage-link-1').text((num - 1) || 1).parent().removeClass('active');
+    //     // $('#pubpage-link-2').text(num).parent().addClass('active');
+    //     // $('#pubpage-link-3').text(num + 1).parent().removeClass('active');
+    //     //
+    //     $('.pubpage').hide();
+    //     $(`#pubpage-${num}`).show();
+    // };
+    //
+    //
+    // if (['/tp', '/trial'].includes(window.location.pathname) && window.location.href.indexOf('trialid') > -1) {
+    //     const trialId = getUrlParameter('trialid');
+    //
+    //     // NCT trial page
+    //     if (trialId.startsWith('NCT')) {
+    //         console.log('on trial page');
+    //
+    //         // More related reviews behaviour
+    //         let shownRelatedReviews = 5;
+    //         const totalRelatedReviews = $('#related-reviews-list').children('div.panel-default').length;
+    //         if (shownRelatedReviews < totalRelatedReviews) {
+    //             $('#more_related_reviews').show();
+    //         }
+    //         $('#related-reviews-list div.panel-default').hide();
+    //         $('#related-reviews-list div.panel-default:lt(' + shownRelatedReviews + ')').show();
+    //
+    //         $('#more_related_reviews').on('click', () => {
+    //             shownRelatedReviews = (shownRelatedReviews + 5 <= totalRelatedReviews) ? shownRelatedReviews + 5 : totalRelatedReviews;
+    //             $('#related-reviews-list div.panel-default:lt(' + shownRelatedReviews + ')').show();
+    //             if (shownRelatedReviews >= totalRelatedReviews) {
+    //                 $('#more_related_reviews').hide();
+    //             }
+    //         });
+    //
+    //         // More included/linked reviews behaviour
+    //         let shownLinkedReviews = 5;
+    //         const totalLinkedReviews = $('#linked-reviews-list').children('div.panel-default').length;
+    //         if (shownLinkedReviews < totalLinkedReviews) {
+    //             $('#more_linked_reviews').show();
+    //         }
+    //         $('#linked-reviews-list div.panel-default').hide();
+    //         $('#linked-reviews-list div.panel-default:lt(' + shownLinkedReviews + ')').show();
+    //
+    //         $('#more_linked_reviews').on('click', () => {
+    //             shownLinkedReviews = (shownLinkedReviews + 5 <= totalLinkedReviews) ? shownLinkedReviews + 5 : totalLinkedReviews;
+    //             $('#linked-reviews-list div.panel-default:lt(' + shownLinkedReviews + ')').show();
+    //             if (shownLinkedReviews >= totalLinkedReviews) {
+    //                 $('#more_linked_reviews').hide();
+    //             }
+    //         });
+    //
+    //         // Pagination trial publications
+    //         let currentPage = 1;
+    //         // Hide if button if its page doesnt exist
+    //         $('#pubpage-nav').find('a').each((i, page) => {
+    //             const action = $(page).attr('data-page');
+    //
+    //             if (isNaN(action)) return;
+    //
+    //             if (!$(`#pubpage-${action}`).length) {
+    //                 $(page).hide();
+    //             }
+    //         }).on('click', e => {
+    //             // On click of a page button
+    //             e.preventDefault();
+    //
+    //             const action = $(e.target).attr('data-page');
+    //             currentPage = action === 'prev' ? (currentPage - 1) : action === 'next' ? (currentPage + 1) : +action;
+    //             const maxPage = $('#pubpages').children().length;
+    //             if (currentPage <= 0) currentPage = 1;
+    //             if (currentPage >= maxPage) currentPage = maxPage;
+    //             setTrialPubPage(currentPage);
+    //         });
+    //
+    //
+    //         // Add new pubmed article
+    //         $('#add-pubarticle').on('submit', e => {
+    //             e.preventDefault();
+    //             const $input = $(e.target).find('[name="article_id"]');
+    //             const pubId = $input.val();
+    //             if (isNaN(pubId)) {
+    //                 return $('#pubarticle-alert').html('<strong>Uh oh! </strong>Please enter a valid PubMed ID.')
+    //                     .finish()
+    //                     .fadeIn({start: () => $input.addClass('danger')})
+    //                     .delay(5000)
+    //                     .fadeOut({complete: () => $input.removeClass('danger')});
+    //             }
+    //
+    //             //TODO: add to list,
+    //             // - check if already in list
+    //             // - check if exists on pubmed
+    //             // - success or error
+    //             $.ajax({
+    //
+    //             })
+    //         });
+    //
+    //     } else {
+    //         // Trial publication landing page
+    //         console.log('on trial pub landing page');
+    //         socket.on('my_response', msg => {
+    //             console.log('websocket connected, requesting data');
+    //             socket.emit('get_trial_panels', {trial_id: trialId});
+    //         });
+    //         socket.on('trial_panels', msg => {
+    //             $('#trial_panels').html(msg.html);
+    //         });
+    //     }
+    //
+    // }
 
 
     socket.on('blank_update', function (msg) {
@@ -304,14 +432,14 @@ $(document).ready(function () {
                 var replacement = $(node).filter('#accordion-rel');
                 $('#accordion-rel').html(replacement.html());
             }
-            var size_li = $('#accordion-rel').children('div.panel-default').length;
+            var size_li = $('#accordion-rel').children('div.card').length;
             var x = 10;
-            $('#accordion-rel div.panel-default').hide();
-            $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+            $('#accordion-rel div.card').hide();
+            $('#accordion-rel div.card:lt(' + x + ')').show();
 
             $('#load_more_rel').click(function () {
                 x = (x + 5 <= size_li) ? x + 5 : size_li;
-                $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+                $('#accordion-rel div.card:lt(' + x + ')').show();
                 if (x === size_li) {
                     $('#load_more_rel').hide();
                 }
@@ -342,14 +470,14 @@ $(document).ready(function () {
                 $('#accordion-rel').replaceWith(replacement);
                 $('#accordion-rel').slideDown(2000);
             }
-            var size_li = $('#accordion-rel').children('div.panel-default').length;
+            var size_li = $('#accordion-rel').children('div.card').length;
             var x = 10;
-            $('#accordion-rel div.panel-default').hide();
-            $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+            $('#accordion-rel div.card').hide();
+            $('#accordion-rel div.card:lt(' + x + ')').show();
 
             $('#load_more_rel').click(function () {
                 x = (x + 5 <= size_li) ? x + 5 : size_li;
-                $('#accordion-rel div.panel-default:lt(' + x + ')').show();
+                $('#accordion-rel div.card:lt(' + x + ')').show();
                 if (x === size_li) {
                     $('#load_more_rel').hide();
                 }
@@ -376,22 +504,24 @@ $(document).ready(function () {
                     $('#incl_trials_container').html(msg['data']);
                 } else $('#accordion-incl').replaceWith(replacement);
             }
-            var size_li = $('#accordion-incl').children('div.panel-default').length;
+            var size_li = $('#accordion-incl').children('div.card').length;
             var x = 20;
             if (size_li <= x) {
                 $('#load_more_incl').hide();
             }
-            $('#accordion-incl div.panel-default').hide();
-            $('#accordion-incl div.panel-default:lt(' + x + ')').show();
+            $('#accordion-incl div.card').hide();
+            $('#accordion-incl div.card:lt(' + x + ')').show();
             $('#load_more_incl').click(function () {
                 x = (x + 5 <= size_li) ? x + 5 : size_li;
-                $('#accordion-incl div.panel-default:lt(' + x + ')').show();
+                $('#accordion-incl div.card:lt(' + x + ')').show();
                 if (x === size_li) {
                     $('#load_more_incl').hide();
                 }
             });
-            $('.incl').removeClass('active');
-            $('#' + msg['sort'] + '.incl').addClass('active');
+            if (msg['sort']) {
+                $('.incl').removeClass('active');
+                $('#' + msg['sort'] + '.incl').addClass('active');
+            }
 
 
             if (window.location.pathname === '/blank') {
@@ -526,7 +656,7 @@ $(document).ready(function () {
                             ${numberWithCommas(data['verified'])} <small>human-verified systematic reviews</small>
                         </div>
                       
-                        <div style="font-size: 1.7rem; margin-top:1rem">
+                        <div style="font-size: 1.2rem; margin-top:1rem">
                             Data updated: <span class="has-tooltip">${moment(data['updated']).fromNow()}<span class="tooltiptext">${moment(data['updated']).format('LLL')}</span></span>
                         </div>
                         `
@@ -784,7 +914,7 @@ $(document).ready(function () {
                     'review_id': getUrlParameter('id'),
                     'type': 'incl',
                     'plot': true,
-                    'rec_trials': $('#accordion-rel').children('.panel-default').toArray().map(div => $(div).attr('id').substring(6))
+                    'rec_trials': $('#accordion-rel').children('.card').toArray().map(div => $(div).attr('id').substring(6))
                 });
                 $panel.detach();
             });
@@ -870,6 +1000,8 @@ $(document).ready(function () {
         calc_completeness();
     });
     $(document).on('click', '.sort .btn', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         var order = $(this).attr('id');
         var side = '';
         if ($(this).hasClass('incl')) {
@@ -877,6 +1009,7 @@ $(document).ready(function () {
         } else {
             side = 'rel';
         }
+        console.log(order, side);
         socket.emit('refresh_trials', {
             'review_id': getUrlParameter('searchterm'),
             'type': side,
@@ -966,7 +1099,7 @@ $(document).ready(function () {
                         'review_id': getUrlParameter('searchterm') || getUrlParameter('id'),
                         'type': category,
                         'plot': true,
-                        'rec_trials': $('#accordion-rel').children('.panel-default').toArray().map(div => $(div).attr('id').substring(6))
+                        'rec_trials': $('#accordion-rel').children('.card').toArray().map(div => $(div).attr('id').substring(6))
                     });
 
                     if (category.indexOf('incl') > -1 && window.location.pathname !== '/blank') {

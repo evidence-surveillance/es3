@@ -16,59 +16,23 @@
     </div>
 </div>
 <div class="row" id="plot-dash">
-    {#    <div class="col-lg-6 col-md-4 col-sm-4 v-center " id="dash" style="display:none; ">#}
-    {##}
-    {#        <ul class="list-group">#}
-    {#            <li class="list-group-item">#}
-    {#                <span class="badge" id="time_since_pub"></span>#}
-    {#                Time since publication#}
-    {#            </li>#}
-    {#            <li class="list-group-item">#}
-    {#                <span class="badge" id="num_incl_trials">0</span>#}
-    {#                Included trials#}
-    {#            </li>#}
-    {#            <li class="list-group-item">#}
-    {#                <span class="badge" id="part_incl_trials">0</span>#}
-    {#                Participants in included trials#}
-    {#            </li>#}
-    {#            <li class="list-group-item">#}
-    {#                <span class="badge" id="num_rel_trials">0</span>#}
-    {#                Selected relevant trials#}
-    {#            </li>#}
-    {#            <li class="list-group-item">#}
-    {#                <span class="badge" id="part_rel_trials">0</span>#}
-    {#                Participants in selected relevant trials#}
-    {#            </li>#}
-    {#            <li class="list-group-item">#}
-    {#                <span class="badge" id="risk">coming soon...</span>#}
-    {#                Risk#}
-    {#            </li>#}
-    {#        </ul>#}
-    {##}
-    {##}
-    {#    </div>#}
 
-    {#    <div class="col-md-7 text-center" id="plot" style="display: none;">#}
-    <div class="col-lg-12 col-md-12 col-sm-12 text-center" id="plot" style="height: 30vh;">
+    <div class="col-12" id="plot" style="height: 30vh;">
     </div>
 
 </div>
 <br>
-<div class="row">
-    <div class="col-md-12">
-
-        <div class="panel-group">
-            <div class="panel panel-default">
-                <div class="panel-heading text-center">
-                    <h1 class="panel-title">
-                        <a data-toggle="collapse" href="#collapseAbs">Abstract</a>
-                    </h1>
-                </div>
-                <div id="collapseAbs" class="panel-collapse collapse">
-                    <div class="panel-body">{{ review.abstract }}</div>
-                </div>
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card py-3">
+            <a class="text-center" data-toggle="collapse" href="#collapseAbs" role="button">
+                <h5 class="mb-0">Abstract</h5>
+            </a>
+            <div id="collapseAbs" class="collapse">
+                <div class="card-body">{{ review.abstract }}</div>
             </div>
         </div>
+
 
     </div>
 </div>

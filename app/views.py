@@ -403,11 +403,16 @@ def unique_reviews_trials():
                'ContentType': 'application/json'}
 
 
-@cache.cached(timeout=60)
+@cache.cached(timeout=600)
 @app.route('/browse')
 def browse():
     """ load browse page  """
-    return render_template('browse.html', categories=crud.get_categories())
+    categories = [{
+        "name": category['category'],
+        "badge_code": category['code'],
+        "href": "/category/%s" % category['id']
+    } for category in crud.get_categories()]
+    return render_template('browse.html', items=categories)
 
 
 @cache.cached(timeout=86400)
@@ -418,8 +423,15 @@ def browse_category(category):
     @param category: id of desired category
     @return: rendered page content
     """
-    return render_template('category.html', conditions=crud.get_conditions(category), category_id=category,
-                           category_name=crud.category_name(category))
+    conditions = [{
+        "name": condition['condition'],
+        "badge_code": "condition_%s" % condition['id'],
+        "href": "/condition/%s" % condition['id']
+    } for condition in crud.get_conditions(category)]
+    return render_template('browse.html',
+                           items=conditions,
+                           title=crud.category_name(category)
+                           )
 
 
 @app.route('/condition_counts', methods=['POST'])

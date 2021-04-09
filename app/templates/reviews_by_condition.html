@@ -4,14 +4,13 @@
 
 
     <div class="container pg_content">
-        <h1 class="display-3 text-left">{{ reviews[0].condition }}</h1>
+        <h1 class="text-left">{{ reviews[0].condition }}</h1>
         <hr>
-
         <div class="row">
 
-            <div class="checkbox">
-                <input type="checkbox" id="verified-only">
-                <label for="verified-only">Verified only</label>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="verified-only">
+                <label class="form-check-label" for="verified-only">Verified only</label>
             </div>
 
             <ul class="list-group">

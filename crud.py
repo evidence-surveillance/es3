@@ -533,11 +533,10 @@ def get_categories():
     """ get the complete list of trial categories """
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute(
-        "SELECT category, code, id from ct_categories;")
+    cur.execute("SELECT category, code, id from ct_categories;")
     categories = cur.fetchall()
     conn.close()
-    return [{'name': c['category'], "code": c['code'], "id": c['id']} for c in categories]
+    return categories
 
 
 @cache.memoize(timeout=86400)
@@ -592,9 +591,9 @@ def category_name(category_id):
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute("select category from ct_categories where id = %s;",
                 (category_id,))
-    category = cur.fetchall()
+    category = cur.fetchone()
     conn.close()
-    return category
+    return category['category']
 
 
 @cache.memoize(timeout=86400)
@@ -868,8 +867,6 @@ def pubmedarticle_to_db(article, table):
              article.abstract, article.doi))
         conn.commit()
     conn.close()
-
-
 
 
 def articles_with_nctids(pmid_list):

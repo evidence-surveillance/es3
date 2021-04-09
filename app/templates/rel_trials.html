@@ -15,31 +15,34 @@
 <div>
     <form>
         <div class="row">
-            <div class="col-2 col-xs-12">
-                <button type="button" id="reset_cmp" class="btn  btn-primary btn-block " value="False"><span
-                        class="glyphicon glyphicon-repeat"></span> Deselect all
+            <div class="col-12">
+                <button type="button" id="reset_cmp" class="btn  btn-primary btn-block " value="False">
+                    <i class="fas fa-redo"></i> Deselect all
                 </button>
             </div>
         </div>
     </form>
 </div>
 <br>
-<div class = "row">
-    <div class="col-xs-1"><div class="text-center" style="padding-top: 6px">Sort:</div></div><div class = "col-xs-11">
-    <div class="btn-group btn-group-justified sort"  data-toggle="buttons" >
-        <div class="btn-group" role="group">
-            <label class="btn btn-primary rel" id="total_votes">
-                <input type="radio" >Total votes</label>
-        </div>
-        <div class="btn-group" role="group">
-            <label class="btn btn-primary active rel" id="net_upvotes" >
-                <input type="radio" >Net upvotes</label>
-        </div>
-        <div class="btn-group" role="group">
-            <label class="btn btn-primary rel" id="completion_date" >
-                <input type="radio" >Completion date</label>
-        </div>
+
+
+<div class="row">
+    <div class="col-1">
+        <div class="text-center pt-1">Sort:</div>
     </div>
+    <div class="col-11">
+        <div class="btn-group btn-group-toggle sort w-100" data-toggle="buttons">
+            <label class="btn btn-primary rel active" id="total_votes">
+                <input type="radio" name="reltrial-order" id="total_votes" checked>Total Votes
+            </label>
+            <label class="btn btn-primary rel active" id="net_upvotes">
+                <input type="radio" name="reltrial-order" id="net_upvotes" checked>Net Upvotes
+            </label>
+            <label class="btn btn-primary rel active" id="completion_date">
+                <input type="radio" name="reltrial-order" id="completion_date" checked>Completion Date
+            </label>
+
+        </div>
     </div>
 </div>
 <br>
@@ -48,34 +51,33 @@
     {% for trial in reg_trials %}
         {% if trial.relationship == 'relevant' %}
 
-            <div class="panel panel-default" id="panel_{{ trial.nct_id }}">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-2">
-                            <div id="{{ trial.nct_id }}_vote" data-id="{{ trial.nct_id }}"
-                                 class="upvote ">
-                                <a class="upvote
+            <div class="card bg-light p-3 mb-2" id="panel_{{ trial.nct_id }}">
+
+
+                <div class="card-title">
+                    <div class="d-flex">
+                        <div id="{{ trial.nct_id }}_vote" data-id="{{ trial.nct_id }}"
+                             class="upvote mr-3">
+                            <a class="upvote
                                                         {% if trial.user_vote == "up" %}{{ "upvote-on" }}{% endif %}"
-                                   title="{{ trial.upvotes }} upvote(s)">{{ trial[4] }}</a>
-                                <span class="count">{{ trial.upvotes - trial.downvotes }}</span>
-                                <a class="downvote {{ ' downvote-on' if trial.user_vote == "down" }}"
-                                   title="{{ trial.downvotes }} downvote(s)">{{ trial[5] }}</a>
-                            </div>
+                               title="{{ trial.upvotes }} upvote(s)">{{ trial[4] }}</a>
+                            <span class="count">{{ trial.upvotes - trial.downvotes }}</span>
+                            <a class="downvote {{ ' downvote-on' if trial.user_vote == "down" }}"
+                               title="{{ trial.downvotes }} downvote(s)">{{ trial[5] }}</a>
                         </div>
 
-
-                        <div class="col-xs-10" style="vertical-align: middle;">
-                            <div class="row">
-                                <div class="col-xs-1 form-check">
+                        <div class="d-flex flex-column w-100">
+                            <div class="d-flex">
+                                <div class="mr-2 form-check">
                                     <input type="checkbox" class="form-check-input rel-check"
                                            value="{{ trial.enrollment }}">
                                 </div>
-                                <div class="col-xs-1">&#10068;</div>
-                                <div class="col-xs-7 nickname-cont">
+                                <div>&#10068;</div>
+                                <div class="nickname-cont">
                                     Predicted {% if current_user.is_authenticated %}by <a
                                         class="nicknames" href="#" data-toggle="tooltip"
                                         title="{{ trial.voters }}">{{ trial.voters }}</a>{% endif %}</div>
-                                <div class="col-xs-3">
+                                <div class="ml-auto">
                                     {% if trial.overall_status in ('Completed','Available') %}
                                         {% set label_type='success' %}
                                     {% elif trial.overall_status in ('Suspended','Terminated','Withheld','Withdrawn') %}
@@ -86,26 +88,25 @@
                                         {% set label_type='info' %}
 
                                     {% endif %}
-                                    <span class="label label-{{ label_type }} pull-right">{{ trial.overall_status }}</span>
+                                    <span class="badge badge-{{ label_type }}">{{ trial.overall_status }}</span>
 
                                 </div>
-
-
                             </div>
 
 
-                            <h4 class="panel-title" style="padding-top: 10px;">
+                            <h5 class="pt-2">
                                 <a data-toggle="collapse" data-parent="#accordion-rel"
                                    href="#collapse_{{ trial.nct_id }}">
                                     {{ trial.brief_title }}</a>
-                            </h4>
-
-
+                            </h5>
                         </div>
+
                     </div>
 
 
                 </div>
+
+
                 <div id="collapse_{{ trial.nct_id }}" class="panel-collapse collapse">
                     <div class="panel-body">
                         Title: {{ trial.brief_title }}<br>
@@ -126,19 +127,16 @@
                             <a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub }}"
                                target="_blank"> {{ pub }}</a>
                         {% endfor %}<br>
-                        <div class="row">
-                            <div class="col-xs-6">Completion date: {{ trial.completion_date }}</div>
-                            <div class="col-xs-6">
-                                {% if current_user.is_authenticated %}
-                                    <span class="input-group-btn">
+                        Completion date: {{ trial.completion_date }}
+                        <br>
+                        {% if current_user.is_authenticated %}
+                            <span class="input-group-btn">
                                                 <button class="btn btn-secondary rel_incl"
                                                         id="{{ trial.nct_id }}_movincl"
                                                         name=" {{ trial.nct_id }}_movincl" type="button"
                                                         {% if locked == True %}style="visibility: hidden;"  {% endif %}>This trial is included</button>
                                               </span>
-                                {% endif %}
-                            </div>
-                        </div>
+                        {% endif %}
 
                     </div>
                 </div>
@@ -147,11 +145,11 @@
     {% endfor %}
 </div>
 <div class="row">
-            <div class="col-2 col-xs-12">
-                <button type="button" id="load_more_rel" class="btn  btn-primary btn-block " value="False">More trials
-                </button>
-            </div>
-        </div>
+    <div class="col-12">
+        <button type="button" id="load_more_rel" class="btn  btn-primary btn-block " value="False">More trials
+        </button>
+    </div>
+</div>
 
 
 
