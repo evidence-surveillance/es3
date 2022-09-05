@@ -7,9 +7,9 @@ class EmailPasswordForm(Form):
     """
     Login form
     """
-    login_email = StringField('Email', validators=[DataRequired(message='Email address is required'),
+    login_email = StringField('Email', render_kw={'autocomplete': 'off'}, validators=[DataRequired(message='Email address is required'),
                                                    Email(message='Email is invalid')])
-    password = PasswordField('Password', validators=[DataRequired(message='Password is required')])
+    password = PasswordField('Password', render_kw={'autocomplete': 'off'}, validators=[DataRequired(message='Password is required')])
     submit = SubmitField(label='Login')
 
 
