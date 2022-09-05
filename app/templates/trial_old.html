@@ -4,65 +4,51 @@
 
     <div class="container-fluid pg_content fixed-width" style="padding:1rem">
 
-        {### TITLE ###}
-        <div class="row mb-3">
-            <h3 class="col-10 m-auto text-center">
-                {{ trial.title }}
-            </h3>
-        </div>
-
-        {### SUMMARY ###}
-        <div class="mb-3">
-            <a class="chevron-collapsible collapsed page-line no-link font-bold" data-toggle="collapse" href="#summary">
-                Summary <i class="fa fa-chevron-right"></i>
-            </a>
-
-            <div class="collapse pt-2" id="summary">
-                {{ trial.summary }}
-            </div>
-        </div>
+        {#    TITLE#}
+        <div class="page-header text-center">
+            <div class="row">
+                <div>
+                    <h3>
+                        <a href="https://clinicaltrials.gov/ct2/show/{{ trial.nct_id }}"
+                           target="_blank">{{ trial.title }}</a>
+                        <br>
+                        <small>Date Completed: {{ trial.completion_date if trial.completion_date else 'N/A' }}
+                        </small><br>
+                        <small>Participants: {{ '{:,}'.format(trial.participants) if trial.participants else 'N/A' }}</small>
 
 
-        {### Relevant/linked stuff ###}
-        <div class="card text-center">
-            <div class="card-header">
-                <ul class="nav nav-tabs card-header-tabs nav-justified" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link font-bold active" id="registrations-tab" data-toggle="tab"
-                           href="#registrations"
-                           role="tab">
-                            Registrations
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link font-bold" id="publications-tab" data-toggle="tab" href="#publications"
-                           role="tab">
-                            Publications
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link font-bold" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab">
-                            Reviews
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div class="card-body tab-content">
-                <div class="tab-pane fade show active" id="registrations" role="tabpanel">
-                    reg
+                    </h3>
                 </div>
-                <div class="tab-pane fade" id="publications" role="tabpanel">
-                    pub
-                </div>
-                <div class="tab-pane fade" id="reviews" role="tabpanel">
-                    rev
+
+
+                {#    BRIEF SUMMARY  #}
+                <div class="row">
+                    <div class="col-md-12">
+
+                        <div class="panel-group" style="margin-bottom: .1rem">
+                            <div class="panel panel-default">
+                                <div class="panel-heading text-center">
+                                    <h1 class="panel-title">
+                                        <a class="faq-collapsible chevron-collapsible collapsed" data-toggle="collapse"
+                                           href="#collapseAbs">
+                                            Brief Summary <i class="fa fa-chevron-right"></i>
+                                        </a>
+                                    </h1>
+                                </div>
+                                <div id="collapseAbs" class="panel-collapse collapse">
+                                    <div class="panel-body">{{ trial.brief_summary }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div>
 
 
         {#        PUBLICATION LIST#}
-        {#        <div class="panel-group" id="trial_publication_panels">
+        <div class="panel-group" id="trial_publication_panels">
             <h3>Published Results Articles</h3>
             {% if current_user.permissions == 'admin' %}
                 <form id="add-pubarticle">
@@ -99,7 +85,7 @@
                                         <a href="https://pubmed.ncbi.nlm.nih.gov/{{ publication.trialpub_id }}"
                                            target="blank">
                                             {{ publication.title }}
-                                        </a>#}{#<small> - {{ publication.publish_date }}</small>#}{#
+                                        </a>{#<small> - {{ publication.publish_date }}</small>#}
                                     </span>
                                         </div>
 
@@ -144,10 +130,10 @@
                     </ul>
                 </nav>
             {% endif %}
-        </div>#}
+        </div>
 
         {#        Included REVIEW LIST#}
-        {#        <div class="panel-group col-md-6" style="padding: 0 1rem 0 0" id="linked-reviews-list">
+        <div class="panel-group col-md-6" style="padding: 0 1rem 0 0" id="linked-reviews-list">
             <h3>Linked Systematic Reviews <br>(From metadata or manual by human)</h3>
             {% if not reviews|selectattr('relationship', 'eq', 'included')|list|length %}
                 <span>None found</span>
@@ -195,9 +181,9 @@
                     style="margin-top: 1rem; display: none">
                 More linked reviews
             </button>
-        </div>#}
+        </div>
         {#        Related REVIEW LIST#}
-        {#        <div class="panel-group col-md-6" style="padding: 0 0 0 1rem" id="related-reviews-list">
+        <div class="panel-group col-md-6" style="padding: 0 0 0 1rem" id="related-reviews-list">
             <h3>Related Systematic Reviews <br>(From bots)</h3>
             {% if not reviews|selectattr('relationship', 'eq', 'relevant')|list|length %}
                 <span>None found</span>
@@ -233,7 +219,7 @@
                 More related reviews
             </button>
 
-        </div>#}
+        </div>
     </div>
     {{ super() }}
 {% endblock %}

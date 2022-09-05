@@ -10,11 +10,6 @@
     margin-bottom: 15px;
 }
 
-.nav-tabs .nav-link.active {
-    background-color: #e9ecef;
-    border-bottom: 1px solid #e9ecef;
-}
-
 .title-page a, #info-content a, nav a,
 .list-group a {
     color: #e64626 !important;
@@ -167,9 +162,9 @@ footer {
     transform: rotate(90deg);
 }
 
-.chevron-collapsible:not(.collapsed) {
+/*.chevron-collapsible:not(.collapsed) {
     margin-bottom: 1rem;
-}
+}*/
 
 .mt-2 {
     margin-top: .5rem;
@@ -241,6 +236,15 @@ footer {
 .btn-group > label:not(:first-child) {
     border-left: 1px solid lightgrey;
 
+}
+
+.page-line {
+    width:100%;
+    border-bottom: 1px solid black;
+}
+
+.no-link, .no-link:hover {
+    color: inherit;
 }
 
 .progress-container {

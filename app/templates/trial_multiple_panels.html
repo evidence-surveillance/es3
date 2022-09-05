@@ -1,0 +1,52 @@
+{% for trial in trials %}
+    <div class="panel panel-default" id="panel_{{ trial.nct_id }}">
+        <div class="panel-heading">
+            <div class="row">
+
+                <div style="display:flex; align-items: center; padding: .2rem .6rem">
+                    <div>
+                        {% if trial.overall_status in ('Completed','Available') %}
+                            {% set label_type='success' %}
+                        {% elif trial.overall_status in ('Suspended','Terminated','Withheld','Withdrawn') %}
+                            {% set label_type='danger' %}
+                        {% elif trial.overall_status in ('Unknown status','No longer available','Temporarily not available') %}
+                            {% set label_type='warning' %}
+                        {% elif trial.overall_status in ('Not yet recruiting','Approved for marketing','Enrolling by invitation','Active, not recruiting','Enrolling','Recruiting') %}
+                            {% set label_type='info' %}
+
+                        {% endif %}
+                        <span class="label label-{{ label_type }}">{{ trial.overall_status }}</span>
+                    </div>
+                    <h4 class="panel-title" style="margin-left: .6rem;">
+                        <a href="/trial?trialid={{ trial.nct_id }}">
+                            {{ trial.brief_title }}
+                        </a>
+                    </h4>
+                </div>
+            </div>
+
+
+        </div>
+        <div id="collapse_{{ trial.nct_id }}" class="panel-collapse">
+            <div class="panel-body">
+                CT.gov identifier: <a
+                    href="https://clinicaltrials.gov/ct2/show/{{ trial.nct_id }}"
+                    target="_blank">{{ trial.nct_id }}</a>
+                <br>
+                {#          ES3 Trial Page: <a
+                                href="https://es3-bidh.sydney.edu.au/trial?trialid={{ trial.nct_id }}"
+                                target="_blank">{{ trial.nct_id }}</a>
+                            <br>#}
+
+                <div class="incl-enrol" title="{{ trial.enrollment }}">
+                    Enrollment: {{ trial.enrollment }}</div>
+                <br>
+                Linked publication(s): {% for pub in trial.trialpubs %}
+                <a href="https://www.ncbi.nlm.nih.gov/pubmed/{{ pub }}"
+                   target="_blank">{{ pub }}</a>
+            {% endfor %}<br>
+                Completion date: {{ trial.completion_date }}
+            </div>
+        </div>
+    </div>
+{% endfor %}

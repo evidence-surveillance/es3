@@ -65,13 +65,14 @@ def get_plot():
                'ContentType': 'application/json'}
 
 
-@socketio.on('get_trial')
-def trial_data(data):
-    trial_id = data['trial_id']
-    trial = crud.get_trial_data(trial_id)
-    socketio.emit('trial_data', {
-        'trial': trial
-    }, room=request.sid)
+# @socketio.on('get_trial_panels')
+# def trialpub_linked_trials(data):
+#     trial_id = data['trial_id']
+#     nct_ids = crud.linked_nctids(trial_id)
+#     trials = crud.get_trials_by_id(nct_ids)
+#     socketio.emit('trial_panels', {
+#         'html': render_template('trial_multiple_panels.html', trials=trials)
+#     }, room=request.sid)
 
 
 @socketio.on('refresh_related')
@@ -527,10 +528,20 @@ def search():
     return render_template('reviewdetail.html')
 
 
-@app.route('/trial', methods=['GET'])
-def trial():
+@app.route('/trials/<trial_id>', methods=['GET'])
+def trialpage(trial_id):
     """ load trial page """
-    return render_template('trial.html')
+    # check db for trial object with this id
+    if trial_id:
+        trial = crud.get_trialpage_data(trial_id)
+        if not trial:
+            # return 404 if no trial object found for id
+            return abort(404)
+
+        return render_template('trial.html', trial=trial)
+
+    # return 404 if no object id given
+    return abort(404)
 
 
 @app.route('/blank', methods=['GET'])

@@ -15,44 +15,25 @@ eutils_email = config.EUTILS_EMAIL
 eutils_tool = config.EUTILS_TOOL
 
 def get_trialpage_data(trial_id):
-    """ Get data to display on /trial page """
-    if not trial_id.startswith('NCT'):
-        return {}
+    """ Get data to display on /trials/<id> page """
+    if not trial_id:
+        return None
 
     conn = dblib.create_con(VERBOSE=True)
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cur.execute("""
-        SELECT nct_id, 
-           COALESCE(official_title, brief_title) AS title,
-           brief_summary,
-           completion_date,
-           enrollment AS participants
-        FROM tregistry_entries
-        WHERE nct_id = %s;
+        SELECT ob.id, obr.nct_id, r.brief_title as title, r.brief_summary as summary
+        FROM trial_objects ob
+        INNER JOIN trial_objects_registered_trials obr on ob.id = obr.object_id
+        INNER JOIN tregistry_entries r on obr.nct_id = r.nct_id
+        WHERE ob.id = %s; 
     """, (trial_id,))
 
     trial = cur.fetchone()
 
-    cur.execute("""
-        SELECT tp.trialpub_id, title, abstract, publish_date
-        FROM trial_publications tp
-        INNER JOIN trialpubs_rtrial tr on tp.trialpub_id = tr.trialpub_id
-        WHERE tr.nct_id = %s
-        order by publish_date desc;
-    """, (trial_id,))
-    publications = cur.fetchall()
-
-    cur.execute("""
-        SELECT sr.review_id, sr.title, rr.verified, rr.relationship, rr.user_id
-        FROM systematic_reviews sr
-        INNER JOIN review_rtrial rr ON sr.review_id = rr.review_id
-        WHERE rr.nct_id = %s;
-    """, (trial_id,))
-    reviews = cur.fetchall()
-
     conn.close()
-    return trial, publications, reviews
+    return trial
 
 
 def review_lock_status(review_id):

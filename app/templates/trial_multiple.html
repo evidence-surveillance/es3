@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+    <div class="container-fluid pg_content">
+        <div class="fixed-width">
+            <p>Multiple trial registrations detected for this publication ID.</p>
+            <div id="trial_panels"></div>
+        </div>
+    </div>
+    {{ super() }}
+{% endblock %}

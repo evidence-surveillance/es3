@@ -112,7 +112,10 @@ $(document).ready(function () {
     // TRIAL PAGES
     // this file is spaghetti
     if (window.location.pathname?.startsWith('/trials/')) {
-
+        // Populate registrations, publications and reviews
+        socket.emit('trial_object_data', {
+            id: $('#accordion-incl .panel').toArray().map(d => d.id.substring(6))
+        });
     }
 
     //
