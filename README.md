@@ -1,5 +1,5 @@
 # ES3 (Formerly known as trial2rev)
-
+[![DOI](https://zenodo.org/badge/147290127.svg)](https://zenodo.org/badge/latestdoi/147290127)
 ## Synopsis
 
 [A shared space for humans and machines to capture links between systematic reviews and clinical trials](http://es3-bidh.sydney.edu.au/)
