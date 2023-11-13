@@ -23,7 +23,7 @@ habanero==0.7.4
 idna==2.10
 itsdangerous==1.1.0
 Jinja2==2.11.2
-joblib==0.16.0
+joblib==1.2.0
 kiwisolver==1.2.0
 kombu==4.6.11
 lxml==4.5.2
